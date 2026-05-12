@@ -20,31 +20,16 @@ const editCreator = async (req, res) => {
   let location = data.location;
   let price = data.price;
   let duration = data.duration;
-  let bodytype = data.bodytype;
-  let smoke = data.smoke;
-  let interestedin = data.interestedin;
-  let height = data.height;
-  let weight = data.weight;
   let description = data.description;
   let gender = data.gender;
   let timeava = data.timeava;
   let daysava = data.daysava;
-  let drink = data.drink;
   let hosttype = data.hosttype;
   let name = data.name; // Add name field
   let userId = data.userId; // Add userId field
   let creator_portfolio_id = data.creator_portfolio_id; // Add creator_portfolio_id field
 
   // Handle array fields properly (FormData sends arrays as multiple fields with same name)
-  if (Array.isArray(data.interestedin)) {
-    interestedin = data.interestedin;
-  } else if (typeof data.interestedin === 'string') {
-    try {
-      interestedin = JSON.parse(data.interestedin);
-    } catch (e) {
-      interestedin = [data.interestedin];
-    }
-  }
 
   if (Array.isArray(data.timeava)) {
     timeava = data.timeava;
@@ -152,16 +137,10 @@ const editCreator = async (req, res) => {
     const location1 = currentuser.location;
     const price1 = currentuser.price;
     const duration1 = currentuser.duration;
-    const bodytype1 = currentuser.bodytype;
-    const smoke1 = currentuser.smoke;
-    const interestedin1 = currentuser.interestedin;
-    const height1 = currentuser.height;
-    const weight1 = currentuser.weight;
     const description1 = currentuser.description;
     const gender1 = currentuser.gender;
     const timeava1 = currentuser.timeava;
     const daysava1 = currentuser.daysava;
-    const drink1 = currentuser.drink;
     const hosttype1 = currentuser.hosttype;
     const initialCreatorFiles = currentuser.creatorfiles;
 
@@ -178,21 +157,6 @@ const editCreator = async (req, res) => {
     if (!duration) {
       duration = duration1;
     }
-    if (!bodytype) {
-      bodytype = bodytype1;
-    }
-    if (!smoke) {
-      smoke = smoke1;
-    }
-    if (!interestedin) {
-      interestedin = interestedin1;
-    }
-    if (!height) {
-      height = height1;
-    }
-    if (!weight) {
-      weight = weight1;
-    }
     if (!description) {
       description = description1;
     }
@@ -204,9 +168,6 @@ const editCreator = async (req, res) => {
     }
     if (!daysava) {
       daysava = daysava1;
-    }
-    if (!drink) {
-      drink = drink1;
     }
     if (!hosttype) {
       hosttype = hosttype1;
@@ -220,12 +181,6 @@ const editCreator = async (req, res) => {
     currentuser.location = location;
     currentuser.price = price;
     currentuser.duration = duration;
-    currentuser.bodytype = bodytype;
-    currentuser.smoke = smoke;
-    currentuser.drink = drink;
-    currentuser.interestedin = interestedin;
-    currentuser.height = height;
-    currentuser.weight = weight;
     currentuser.description = description;
     currentuser.gender = gender;
     currentuser.timeava = timeava;

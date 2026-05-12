@@ -11,16 +11,10 @@ const createCreator = async (req, res) => {
   const location = data.location;
   const price = data.price;
   const duration = data.duration;
-  const bodytype = data.bodytype;
-  const smoke = data.smoke;
-  const interestedin = data.interestedin;
-  const height = data.height;
-  const weight = data.weight;
   const description = data.description;
   const gender = data.gender;
   const timeava = data.timeava;
   const daysava = data.daysava;
-  const drink = data.drink;
   const hosttype = data.hosttype;
   const photolink = data.photolink || [];
 
@@ -118,12 +112,6 @@ const createCreator = async (req, res) => {
       location,
       price,
       duration,
-      bodytype,
-      smoke,
-      drink,
-      interestedin,
-      height,
-      weight,
       description,
       gender,
       timeava,

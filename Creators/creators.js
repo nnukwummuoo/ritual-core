@@ -25,11 +25,6 @@ const markertdata = new Schema(
       required: false,
     },
 
-    drink: {
-      type: String,
-      required: false,
-    },
-
     name: {
       type: String,
       required: false,
@@ -51,31 +46,6 @@ const markertdata = new Schema(
     },
 
     duration: {
-      type: String,
-      required: false,
-    },
-
-    bodytype: {
-      type: String,
-      required: false,
-    },
-
-    smoke: {
-      type: String,
-      required: false,
-    },
-
-    interestedin: {
-      type: [String],
-      required: false,
-    },
-
-    height: {
-      type: String,
-      required: false,
-    },
-
-    weight: {
       type: String,
       required: false,
     },

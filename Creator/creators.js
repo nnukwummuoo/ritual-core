@@ -20,14 +20,6 @@ async function initalizeCreator(memko_socialDB,database){
     await database.createStringAttribute(
         memko_socialDB,
         UsersDB.$id,
-        'drink',
-        255,true
-    
-    )
-
-    await database.createStringAttribute(
-        memko_socialDB,
-        UsersDB.$id,
         'name',
         255,true
     
@@ -58,42 +50,6 @@ async function initalizeCreator(memko_socialDB,database){
         UsersDB.$id,
         'duration',
         255,true
-    
-    )
-    await database.createStringAttribute(
-        memko_socialDB,
-        UsersDB.$id,
-        'bodytype',
-        255,true
-    
-    )
-    await database.createStringAttribute(
-        memko_socialDB,
-        UsersDB.$id,
-        'smoke',
-        255,true
-    
-    )
-    await database.createStringAttribute(
-        memko_socialDB,
-        UsersDB.$id,
-        'interestedin',
-        255,true
-    
-    )
-    await database.createStringAttribute(
-        memko_socialDB,
-        UsersDB.$id,
-        'height',
-        255,true
-    
-    )
-    await database.createStringAttribute(
-        memko_socialDB,
-        UsersDB.$id,
-        'weight',
-        255,true
-    
     )
     await database.createStringAttribute(
         memko_socialDB,
