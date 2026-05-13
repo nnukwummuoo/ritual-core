@@ -121,23 +121,43 @@ router.get("/download", async (req, res) => {
 router.get("/view", async (req, res) => {
   try {
     const { publicId, bucket } = req.query;
-    if (!publicId) return res.status(400).json({ error: "Public ID is required." });
-    const bucketName = bucket && bucket !== "default" ? bucket : STORJ_BUCKET_POST;
+
+    if (!publicId) {
+      res.setHeader("Content-Type", "image/png");
+      return res.status(200).end();
+    }
+
+    const bucketName =
+      bucket && bucket !== "default" ? bucket : STORJ_BUCKET_POST;
 
     const streamResp = await streamFile(publicId, bucketName);
-    if (!streamResp) return res.status(404).json({ error: "File not found" });
 
-    res.setHeader("Content-Type", streamResp.contentType || "application/octet-stream");
-    if (streamResp.contentLength) res.setHeader("Content-Length", String(streamResp.contentLength));
+    if (!streamResp || !streamResp.body) {
+      res.setHeader("Content-Type", "image/png");
+      return res.status(200).end();
+    }
 
-    streamResp.body.on('error', (e) => {
-      try { res.destroy(e); } catch {}
+    res.setHeader(
+      "Content-Type",
+      streamResp.contentType || "application/octet-stream"
+    );
+
+    if (streamResp.contentLength) {
+      res.setHeader("Content-Length", String(streamResp.contentLength));
+    }
+
+    streamResp.body.on("error", (e) => {
+      try {
+        res.destroy(e);
+      } catch {}
     });
+
     return streamResp.body.pipe(res);
+
   } catch (err) {
-    const status = err?.response?.status || 500;
-    const data = err?.response?.data || err.message;
-    res.status(status).json({ error: typeof data === 'string' ? data : 'File view error', status });
+    // IMPORTANT: NEVER return JSON for <img> endpoints (prevents ORB)
+    res.setHeader("Content-Type", "image/png");
+    return res.status(200).end();
   }
 });
 
