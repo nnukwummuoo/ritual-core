@@ -343,16 +343,26 @@ async function updateManyFileToCloudinary(oldPublicIds = [], newFiles = [], fold
 // -----------------------------
 function normalizeS3Key(publicId) {
   if (!publicId || typeof publicId !== 'string') return null;
+
   const trimmed = publicId.trim();
   if (!trimmed) return null;
+
+  // If full URL, extract only the file name from pathname
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     try {
       const u = new URL(trimmed);
       const pathSegments = u.pathname.split('/').filter(Boolean);
-      return pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : null;
-    } catch { return null; }
+
+      return pathSegments.length > 0
+        ? pathSegments[pathSegments.length - 1]
+        : null;
+    } catch {
+      return null;
+    }
   }
-  return trimmed;
+
+  // Remove signed URL query params if present
+  return trimmed.split("?")[0];
 }
 
 // -----------------------------
@@ -388,6 +398,11 @@ async function streamFile(publicId, folder = STORJ_BUCKET_DEFAULT, start, end) {
   const key = normalizeS3Key(publicId);
   if (!key) return null;
   const bucket = getBucketName(folder);
+
+   console.log("PUBLIC ID:", publicId);
+  console.log("NORMALIZED KEY:", key);
+  console.log("BUCKET:", bucket);
+  
   try {
     const params = { Bucket: bucket, Key: key };
     if (typeof start === 'number') {
