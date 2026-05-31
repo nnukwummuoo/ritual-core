@@ -1,115 +1,16 @@
 {
   "backups": [
     {
-      "id": "1763020176098",
-      "fileName": "backup_2025-11-13_07-49-16.bson.gz",
-      "size": 305872,
-      "date": "2025-11-13",
-      "lastModified": "2025-11-13T07:49:36.094Z",
+      "id": "1780189236687",
+      "fileName": "backup_2026-05-31_01-00-08.bson.gz",
+      "size": 506692,
+      "date": "2026-05-31",
+      "lastModified": "2026-05-31T01:00:36.417Z",
       "status": "success",
-      "location": "https://gateway.storjshare.io/database-backup/backup_2025-11-13_07-49-16.bson.gz",
+      "location": "https://gateway.storjshare.io/database-backup/backup_2026-05-31_01-00-08.bson.gz",
       "error": null,
-      "collections": 43
-    },
-    {
-      "id": "1762515033860",
-      "fileName": "backup_2025-11-07_11-30-06.bson.gz",
-      "size": 297353,
-      "date": "2025-11-07",
-      "lastModified": "2025-11-07T11:30:33.852Z",
-      "status": "success",
-      "location": "https://gateway.storjshare.io/database-backup/backup_2025-11-07_11-30-06.bson.gz",
-      "error": null,
-      "collections": 43
-    },
-    {
-      "id": "1761433261150",
-      "size": 1494709,
-      "lastModified": "2025-10-25T23:01:01.151Z",
-      "status": "completed",
-      "location": "https://gateway.storjshare.io/database-backup/backup_2025-10-25.bson.gz"
-    },
-    {
-      "id": "1761247570985",
-      "fileName": "backup_2025-10-23.bson.gz",
-      "size": 1494099,
-      "date": "2025-10-23",
-      "lastModified": "2025-10-23T19:26:10.985Z",
-      "status": "completed",
-      "location": "https://gateway.storjshare.io/database-backup/backup_2025-10-23.bson.gz"
-    },
-    {
-      "id": "1761247108019",
-      "fileName": "backup_2025-10-23.bson.gz",
-      "size": 1494099,
-      "date": "2025-10-23",
-      "lastModified": "2025-10-23T19:18:28.019Z",
-      "status": "completed",
-      "location": "https://gateway.storjshare.io/database-backup/backup_2025-10-23.bson.gz"
-    },
-    {
-      "id": "1761246930702",
-      "fileName": "backup_2025-10-23.bson.gz",
-      "size": 1494099,
-      "date": "2025-10-23",
-      "lastModified": "2025-10-23T19:15:30.702Z",
-      "status": "completed",
-      "location": "https://gateway.storjshare.io/database-backup/backup_2025-10-23.bson.gz"
-    },
-    {
-      "id": "1760999955389",
-      "fileName": "backup_2025-10-20.bson.gz",
-      "size": 1280825,
-      "date": "2025-10-20",
-      "lastModified": "2025-10-20T22:39:15.389Z",
-      "status": "completed",
-      "location": "https://gateway.storjshare.io/database-backup/backup_2025-10-20.bson.gz"
-    },
-    {
-      "id": "1760999215656",
-      "fileName": "backup_2025-10-20.json.gz",
-      "size": 1276955,
-      "date": "2025-10-20",
-      "lastModified": "2025-10-20T22:26:55.656Z",
-      "status": "completed",
-      "location": "https://gateway.storjshare.io/database-backup/backup_2025-10-20.json.gz"
-    },
-    {
-      "id": "1760999025994",
-      "fileName": "backup_2025-10-20.json.gz",
-      "size": 1276957,
-      "date": "2025-10-20",
-      "lastModified": "2025-10-20T22:23:45.994Z",
-      "status": "completed",
-      "location": "https://gateway.storjshare.io/database-backup/backup_2025-10-20.json.gz"
-    },
-    {
-      "id": "1760995703198",
-      "fileName": "backup_2025-10-18.tar.gz",
-      "size": 18874368,
-      "date": "2025-10-18",
-      "lastModified": "2025-10-20T21:28:23.198Z",
-      "status": "completed",
-      "location": "Storj database-backup bucket"
-    },
-    {
-      "id": "1760995703196",
-      "fileName": "backup_2025-10-19.tar.gz",
-      "size": 12582912,
-      "date": "2025-10-19",
-      "lastModified": "2025-10-20T21:28:23.196Z",
-      "status": "completed",
-      "location": "Storj database-backup bucket"
-    },
-    {
-      "id": "1760995703191",
-      "fileName": "backup_2025-10-20.tar.gz",
-      "size": 15728640,
-      "date": "2025-10-20",
-      "lastModified": "2025-10-20T21:28:23.191Z",
-      "status": "completed",
-      "location": "Storj database-backup bucket"
+      "collections": 51
     }
   ],
-  "lastUpdated": "2025-11-13T07:49:36.098Z"
+  "lastUpdated": "2026-05-31T01:00:39.132Z"
 }

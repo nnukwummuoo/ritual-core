@@ -26,6 +26,9 @@ const readProfile = async (req, res) => {
       const raw = decoded.trim();
       const withoutAt = raw.replace(/^@+/, '');
       const candidates = [raw];
+
+     
+
       if (withoutAt !== raw) candidates.push(withoutAt);
       du = await userdb.findOne({ username: { $in: candidates } }).exec();
       if (!du) {
