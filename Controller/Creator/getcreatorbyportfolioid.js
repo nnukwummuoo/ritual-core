@@ -6,12 +6,16 @@ let crushdb = require("../../Creators/crushdb");
 let userdb = require("../../Creators/userdb");
 const admindb = require("../../Creators/admindb");
 const { pushmessage } = require("../../utiils/sendPushnot");
+
 const createCreator = async (req, res) => {
   const hostid = req.body.hostid;
   const userid = req.body.userid;
+  const username = req.body.username;
+  console.log("Received request to fetch creator by portfolio ID:", { hostid, userid, username });
   let added = false;
+  
 
-  if (!hostid) {
+  if (!hostid && !username) {
     return res.status(400).json({
       ok: false,
       message: "user Id invalid!!",
@@ -25,20 +29,50 @@ const createCreator = async (req, res) => {
     //  let currentuser = (await userdb).documents.find(value=>{
     //   return value.$id === hostid
     //  })
-    const allCreators = await creators.find({}).exec();
-    let currentuser = await creators
-      .findOne({
-        "_id": hostid,
-      })
-      .exec();
-    
-    if (!currentuser) {
-      return res.status(409).json({
-        ok: false,
-        message: `user host empty`,
-      });
-    }
+  
+let currentuser;
 
+if (hostid) {
+  currentuser = await creators.findOne({_id:hostid}).exec();
+} 
+else if (username) {
+  const cleanUsername = String(username)
+  .replace(/^@/, "")
+  .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const account = await userdb.findOne({
+  $or: [
+    { username: new RegExp("^@?" + cleanUsername + "$", "i") },
+    { nickname: new RegExp("^@?" + cleanUsername + "$", "i") }
+  ]
+}).exec();
+
+
+ 
+
+  if (!account) {
+    return res.status(404).json({
+      ok: false,
+      message: "User not found in userdb"
+    });
+  }
+
+currentuser = await creators.findOne({
+  $or: [
+    { userid:req.body.userid || account?.id },
+    { userid: account._id.toString() }
+  ]
+}).exec();
+
+  
+
+  if (!currentuser) {
+  return res.status(404).json({
+    ok: false,
+    message: "Creator profile not found"
+  });
+}
+}
     // Check if the current user has this creator in their crush list
     let istrue = await crushdb
       .findOne({
@@ -187,5 +221,6 @@ const createCreator = async (req, res) => {
     });
   }
 };
+
 
 module.exports = createCreator;
