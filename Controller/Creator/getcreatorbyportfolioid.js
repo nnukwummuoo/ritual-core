@@ -128,6 +128,7 @@ currentuser = await creators.findOne({
       // Include VIP status from user data
       isVip: modState.isVip || false,
       vipEndDate: modState.vipEndDate || null,
+      userPhotolink: modState.photolink || null,
     };
 
  
