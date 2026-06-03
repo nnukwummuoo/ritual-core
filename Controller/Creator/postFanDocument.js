@@ -18,7 +18,7 @@ const postFanDocument = async (req, res) => {
     }
 
     // Upload both files to Cloudinary
-    const results = await uploadManyFilesToCloudinary(req.files, "fan-verification");
+    const results = await uploadManyFilesToCloudinary(req.files, "creator-application");
 
     if (!results || results.length < 2 || !results[0].file_link || !results[1].file_link) {
       return res.status(400).json({ ok: false, message: "File upload failed. Please try again." });
