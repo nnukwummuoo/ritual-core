@@ -4,6 +4,7 @@ const creatordb = require("../../Creators/creators");
 
 const getAllFanRequests = async (req, res) => {
   const { userid } = req.body;
+  
 
   if (!userid) {
     return res.status(400).json({
@@ -80,6 +81,7 @@ const getAllFanRequests = async (req, res) => {
         if (isCreator) {
           // Current user is creator, get fan details
           otherUser = await userdb.findOne({ _id: request.userid }).exec();
+          console.log("fan_verified from userdb:", otherUser?.fan_verified); // 👈 add here
           userType = 'creator';
         } else if (isFan) {
           // Current user is fan, get creator details
@@ -208,7 +210,8 @@ const getAllFanRequests = async (req, res) => {
           photolink: finalPhotolink,
           isCreator: userType === 'fan', // If current user is fan, other user is creator
           isVip: otherUser.isVip || false, // Include VIP status
-          vipEndDate: otherUser.vipEndDate // Include VIP end date
+          vipEndDate: otherUser.vipEndDate, // Include VIP end date
+          fanVerified: otherUser.fan_verified || false, // 👈 add this
         } : {
           name: 'Unknown User',
           username: null, // Include username field
@@ -217,7 +220,8 @@ const getAllFanRequests = async (req, res) => {
           photolink: '/picture-1.jfif',
           isCreator: userType === 'fan',
           isVip: false,
-          vipEndDate: null
+          vipEndDate: null,
+          fanVerified: false,
         };
 
         return {
