@@ -75,10 +75,10 @@ const acceptFanRequest = async (req, res) => {
 
     // Extend expiration based on request type:
     // - Fan Call: 10 days from acceptance
-    // - Fan Meet/Date: 14 days from acceptance
+    // - Fan Meet/Date: 20 days from acceptance
     const normalizedType = (request.type || "").toLowerCase().trim();
     const isFanCall = normalizedType.includes("fan call");
-    const expirationDays = isFanCall ? 10 : 14;
+    const expirationDays = isFanCall ? 10 : 20;
     request.expiresAt = new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000);
 
     await request.save();

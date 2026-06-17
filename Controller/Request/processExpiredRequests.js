@@ -9,7 +9,7 @@ const processExpiredRequests = async (req, res) => {
   try {
     const now = new Date();
     const tenDaysAgo = new Date(now.getTime() - (10 * 24 * 60 * 60 * 1000));
-    const fourteenDaysAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
+    const twentyDaysAgo = new Date(now.getTime() - (20 * 24 * 60 * 60 * 1000));
 
     // Find all accepted Fan Call requests that are older than 10 days
     const expiredFanCallRequests = await requestdb.find({
@@ -18,11 +18,11 @@ const processExpiredRequests = async (req, res) => {
       createdAt: { $lt: tenDaysAgo }
     }).exec();
 
-    // Find all accepted non-Fan Call requests that are older than 14 days
+    // Find all accepted non-Fan Call requests that are older than 20 days
     const expiredOtherRequests = await requestdb.find({
       status: "accepted",
       type: { $ne: "Fan Call" },
-      createdAt: { $lt: fourteenDaysAgo }
+      createdAt: { $lt:  twentyDaysAgo }
     }).exec();
 
     // Combine all accepted requests that should be expired
@@ -35,7 +35,7 @@ const processExpiredRequests = async (req, res) => {
     }).exec();
 
     const allExpiredRequests = [...expiredAcceptedRequests, ...expiredPendingRequests];
-    console.log(`Processing ${allExpiredRequests.length} expired requests (${expiredFanCallRequests.length} Fan Call 10d, ${expiredOtherRequests.length} other 14d, ${expiredPendingRequests.length} pending)`);
+    console.log(`Processing ${allExpiredRequests.length} expired requests (${expiredFanCallRequests.length} Fan Call 10d, ${expiredOtherRequests.length} other 20d, ${expiredPendingRequests.length} pending)`);
 
     for (const request of allExpiredRequests) {
       try {

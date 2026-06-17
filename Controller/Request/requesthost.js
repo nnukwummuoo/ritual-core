@@ -86,7 +86,7 @@ const createLike = async (req, res) => {
         await pushActivityNotification(creatoremail.userid, "New request received", "request")
 
         // IMPORTANT: Pending requests expire in 23 hours 14 minutes
-        // After acceptance, they get extended based on type (7 days for Fan Call, 14 days for others)
+        // After acceptance, they get extended based on type (10 days for Fan Call, 20 days for others)
         let requests = {
             userid,
             creator_portfolio_id,

@@ -74,9 +74,9 @@ const createFanRequest = async (req, res) => {
     };
     await historydb.create(clientHistory);
 
-    // Calculate expiration based on type: 7 days for Fan Call, 14 days for others
+    // Calculate expiration based on type: 7 days for Fan Call, 20 days for others
     const isFanCall = (type || "").toLowerCase().includes("fan call");
-    const expirationDays = isFanCall ? 7 : 14;
+    const expirationDays = isFanCall ? 10 : 20;
 
     // Create request record
     const requestData = {
