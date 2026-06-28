@@ -74,22 +74,18 @@ const createFanRequest = async (req, res) => {
     };
     await historydb.create(clientHistory);
 
-    // Calculate expiration based on type: 7 days for Fan Call, 20 days for others
-    const isFanCall = (type || "").toLowerCase().includes("fan call");
-    const expirationDays = isFanCall ? 10 : 20;
-
     // Create request record
-    const requestData = {
-      userid,
-      creator_portfolio_id,
-      type,
-      place,
-      time,
-      status: "request",
-      date,
-      price: creatorPrice,
-      expiresAt: new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000)
-    };
+const requestData = {
+  userid,
+  creator_portfolio_id,
+  type,
+  place,
+  time,
+  status: "request",
+  date,
+  price: creatorPrice,
+  expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours for creator to accept
+};
 
     const request = await requestdb.create(requestData);
 
