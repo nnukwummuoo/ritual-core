@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { core } = require('./processExpiredRequests');
+const { core } = require('../Controller/request/processExpiredRequests');
 
 /**
  * Scheduled processing for expired fan meet requests
