@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const processExpiredRequests = require("../../scripts/processExpiredRequests");
+const { controller } = require("../../scripts/processExpiredRequests");
 
 router.post("/", async (req, res) => {
-  await processExpiredRequests(req, res);
+  await controller(req, res);
 });
 
 module.exports = router;

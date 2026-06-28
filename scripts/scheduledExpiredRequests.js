@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const processExpiredRequests = require('./processExpiredRequests');
+const { core } = require('./processExpiredRequests');
 
 /**
  * Scheduled processing for expired fan meet requests
@@ -54,7 +54,7 @@ class ScheduledExpiredRequests {
 
     try {
       // Call the processing function (script version, not controller version)
-      await processExpiredRequests.core();
+      await core()
       
       this.lastStats = {
         timestamp: this.lastRun,

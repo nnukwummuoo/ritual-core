@@ -155,5 +155,7 @@ const processExpiredRequests = async (req, res) => {
   }
 };
 
-module.exports = processExpiredRequests;
-module.exports.core = processExpiredRequestsCore;
+module.exports = {
+  core: processExpiredRequestsCore,
+  controller: processExpiredRequests
+};
