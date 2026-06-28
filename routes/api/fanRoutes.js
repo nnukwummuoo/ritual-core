@@ -7,7 +7,7 @@ const acceptFanRequest = require("../../Controller/Request/acceptFanRequest");
 const declineFanRequest = require("../../Controller/Request/declineFanRequest");
 const cancelFanRequest = require("../../Controller/Request/cancelFanRequests");
 const completeFanRequest = require("../../Controller/Request/completeFanRequests");
-const processExpiredRequests = require("../../Controller/Request/processExpiredRequests");
+const { controller: processExpiredRequests } = require("../../Controller/Request/processExpiredRequests");
 const getFanRequests = require("../../Controller/Request/getFanRequests");
 
 // Create fan meet request
