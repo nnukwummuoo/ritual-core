@@ -21,47 +21,61 @@ const acceptFanRequest = async (req, res) => {
   }
 
   try {
-    // Find the request
-    const request = await requestdb.findOne({
+    // First check if request exists at all
+    const existingRequest = await requestdb.findOne({
       _id: requestId,
       creator_portfolio_id: creator_portfolio_id,
-      userid: userid,
-      status: "request"
+      userid: userid
     }).exec();
 
-    if (!request) {
+    if (!existingRequest) {
       return res.status(404).json({
         ok: false,
-        message: "Request request not found or already processed"
+        message: "Request not found"
+      });
+    }
+
+    // If already accepted, just return success silently
+    // This handles the case where creator refreshes and accepts again
+    if (existingRequest.status === "accepted") {
+      return res.status(200).json({
+        ok: true,
+        message: "Request already accepted"
+      });
+    }
+
+    // If already declined, expired, completed or cancelled, block it
+    if (["declined", "expired", "completed", "cancelled"].includes(existingRequest.status)) {
+      return res.status(400).json({
+        ok: false,
+        message: `Request has already been ${existingRequest.status}`
       });
     }
 
     // Check if request has expired
-    if (new Date() > new Date(request.expiresAt)) {
-      // Move money back from pending to balance
+    if (new Date() > new Date(existingRequest.expiresAt)) {
       const user = await userdb.findOne({ _id: userid }).exec();
       if (user) {
         let userBalance = parseFloat(user.balance) || 0;
         let userPending = parseFloat(user.pending) || 0;
-        let refundAmount = parseFloat(request.price);
+        let refundAmount = parseFloat(existingRequest.price);
 
-        user.balance = String(userBalance + refundAmount);
-        user.pending = String(userPending - refundAmount);
-        await user.save();
+        if (userPending >= refundAmount) {
+          user.balance = String(userBalance + refundAmount);
+          user.pending = String(userPending - refundAmount);
+          await user.save();
 
-        // Update request status to expired
-        request.status = "expired";
-        await request.save();
+          await historydb.create({
+            userid,
+            details: `Fan meet request expired - refund processed (${requestId})`,
+            spent: "0",
+            income: `${refundAmount}`,
+            date: `${Date.now().toString()}`
+          });
+        }
 
-        // Create refund history
-        const refundHistory = {
-          userid,
-          details: "Fan meet request expired - refund processed",
-          spent: "0",
-          income: `${refundAmount}`,
-          date: `${Date.now().toString()}`
-        };
-        await historydb.create(refundHistory);
+        existingRequest.status = "expired";
+        await existingRequest.save();
       }
 
       return res.status(400).json({
@@ -70,27 +84,21 @@ const acceptFanRequest = async (req, res) => {
       });
     }
 
-    // Update request status to accepted and extend expiration time
-    request.status = "accepted";
+    // Accept the request
+    existingRequest.status = "accepted";
 
-    // Extend expiration based on request type:
-    // - Fan Call: 10 days from acceptance
-    // - Fan Meet/Date: 20 days from acceptance
-    const normalizedType = (request.type || "").toLowerCase().trim();
+    const normalizedType = (existingRequest.type || "").toLowerCase().trim();
     const isFanCall = normalizedType.includes("fan call");
     const expirationDays = isFanCall ? 10 : 20;
-    request.expiresAt = new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000);
+    existingRequest.expiresAt = new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000);
 
-    await request.save();
+    await existingRequest.save();
 
-    // Get host type for dynamic messages
-    const hostType = request.type || "Fan meet";
+    const hostType = existingRequest.type || "Fan meet";
 
-    // Send notification only to the fan (userid is the fan who made the request)
     await sendEmail(userid, `Your ${hostType.toLowerCase()} request has been accepted!`);
     await pushActivityNotification(userid, `Your ${hostType.toLowerCase()} request has been accepted!`, "request_accepted");
 
-    // Create database notification for fan
     await admindb.create({
       userid: userid,
       message: `Your ${hostType.toLowerCase()} request has been accepted!`,

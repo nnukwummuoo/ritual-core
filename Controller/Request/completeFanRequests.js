@@ -11,7 +11,6 @@ const completeFanRequest = async (req, res) => {
     userid,
     creator_portfolio_id
   } = req.body;
-  
 
   if (!requestId || !userid || !creator_portfolio_id) {
     return res.status(400).json({
@@ -36,8 +35,17 @@ const completeFanRequest = async (req, res) => {
       });
     }
 
-    // Update request status to completed
+    // Guard: prevent double payment
+    if (request.paid === true) {
+      return res.status(400).json({
+        ok: false,
+        message: "This request has already been paid."
+      });
+    }
+
+    // Update request status to completed and mark as paid
     request.status = "completed";
+    request.paid = true;
     await request.save();
 
     // Transfer money from user's pending to creator's earnings
@@ -45,17 +53,14 @@ const completeFanRequest = async (req, res) => {
     let creator = await userdb.findOne({ _id: creator_portfolio_id }).exec();
     
     if (!creator) {
-      // If not found by _id, try to find by creator_portfolio_id (hostid) in creatordb
       const creatorRecord = await creatordb.findOne({ _id: creator_portfolio_id }).exec();
       if (creatorRecord) {
         creator = await userdb.findOne({ _id: creatorRecord.userid }).exec();
       }
     }
 
-    // Get host type from request first, then fallback to creator profile
     let creatorProfile = await creatordb.findOne({ userid: creator_portfolio_id }).exec();
     if (!creatorProfile) {
-      // If not found by userid, try by _id (in case creator_portfolio_id is the profile ID)
       creatorProfile = await creatordb.findOne({ _id: creator_portfolio_id }).exec();
     }
     const hostType = request.type || creatorProfile?.hosttype || "Fan meet";
@@ -64,6 +69,15 @@ const completeFanRequest = async (req, res) => {
       let userPending = parseFloat(user.pending) || 0;
       let creatorEarnings = parseFloat(creator.earnings) || 0;
       let transferAmount = parseFloat(request.price);
+
+      // Guard: make sure pending actually covers the transfer
+      if (userPending < transferAmount) {
+        console.warn(`⚠️  Pending (${userPending}) is less than transfer amount (${transferAmount}) for request ${request._id}`);
+        return res.status(400).json({
+          ok: false,
+          message: "Insufficient pending balance. Please contact support."
+        });
+      }
 
       // Deduct from user's pending
       user.pending = String(userPending - transferAmount);
@@ -74,30 +88,27 @@ const completeFanRequest = async (req, res) => {
       await creator.save();
 
       // Create transaction histories
-      const userHistory = {
+      await historydb.create({
         userid,
-        details: `${hostType} completed - payment transferred to creator`,
+        details: `${hostType} completed - payment transferred to creator (${requestId})`,
         spent: `${transferAmount}`,
         income: "0",
         date: `${Date.now().toString()}`
-      };
-      await historydb.create(userHistory);
+      });
 
-      const creatorHistory = {
+      await historydb.create({
         userid: creator_portfolio_id,
-        details: `${hostType} completed - payment received`,
+        details: `${hostType} completed - payment received (${requestId})`,
         spent: "0",
         income: `${transferAmount}`,
         date: `${Date.now().toString()}`
-      };
-      await historydb.create(creatorHistory);
+      });
     }
 
     // Send notifications
     await sendEmail(userid, `${hostType} completed successfully!`);
     await pushActivityNotification(userid, `${hostType} completed successfully!`, "request_completed");
     
-    // Send notification to creator's actual user ID, not portfolio ID
     if (creator && creator._id) {
       await sendEmail(creator._id, `${hostType} completed - payment received!`);
       await pushActivityNotification(creator._id, `${hostType} completed - payment received!`, "request_completed");
