@@ -62,11 +62,10 @@ const backfillMissedRefunds = async () => {
   const now = new Date();
   const twentyDaysAgo = new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000);
 
-  const missedOther = await requestdb.find({
+ const missedOther = await requestdb.find({
     status: "expired",
     type: { $ne: "Fan Call" },
-    price: { $gt: 0 },
-    createdAt: { $gt: twentyDaysAgo }
+    price: { $gt: 0 }
   }).exec();
 
   console.log(`Backfill: checking ${missedOther.length} potentially missed refunds`);
