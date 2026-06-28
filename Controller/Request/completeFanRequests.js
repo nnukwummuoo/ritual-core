@@ -20,7 +20,7 @@ const completeFanRequest = async (req, res) => {
   }
 
   try {
-    // Find the request
+    // 1. Find the request
     const request = await requestdb.findOne({ 
       _id: requestId,
       userid: userid,
@@ -35,7 +35,7 @@ const completeFanRequest = async (req, res) => {
       });
     }
 
-    // Guard: prevent double payment
+    // 2. Check double payment guard
     if (request.paid === true) {
       return res.status(400).json({
         ok: false,
@@ -43,12 +43,7 @@ const completeFanRequest = async (req, res) => {
       });
     }
 
-    // Update request status to completed and mark as paid
-    request.status = "completed";
-    request.paid = true;
-    await request.save();
-
-    // Transfer money from user's pending to creator's earnings
+    // 3. Find user and creator
     const user = await userdb.findOne({ _id: userid }).exec();
     let creator = await userdb.findOne({ _id: creator_portfolio_id }).exec();
     
@@ -65,54 +60,62 @@ const completeFanRequest = async (req, res) => {
     }
     const hostType = request.type || creatorProfile?.hosttype || "Fan meet";
 
-    if (user && creator) {
-      let userPending = parseFloat(user.pending) || 0;
-      let creatorEarnings = parseFloat(creator.earnings) || 0;
-      let transferAmount = parseFloat(request.price);
-
-      // Guard: make sure pending actually covers the transfer
-      if (userPending < transferAmount) {
-        console.warn(`⚠️  Pending (${userPending}) is less than transfer amount (${transferAmount}) for request ${request._id}`);
-        return res.status(400).json({
-          ok: false,
-          message: "Insufficient pending balance. Please contact support."
-        });
-      }
-
-      // Deduct from user's pending
-      user.pending = String(userPending - transferAmount);
-      await user.save();
-
-      // Add to creator's earnings
-      creator.earnings = String(creatorEarnings + transferAmount);
-      await creator.save();
-
-      // Create transaction histories
-      await historydb.create({
-        userid,
-        details: `${hostType} completed - payment transferred to creator (${requestId})`,
-        spent: `${transferAmount}`,
-        income: "0",
-        date: `${Date.now().toString()}`
-      });
-
-      await historydb.create({
-        userid: creator_portfolio_id,
-        details: `${hostType} completed - payment received (${requestId})`,
-        spent: "0",
-        income: `${transferAmount}`,
-        date: `${Date.now().toString()}`
+    if (!user || !creator) {
+      return res.status(404).json({
+        ok: false,
+        message: "User or creator not found"
       });
     }
+
+    let userPending = parseFloat(user.pending) || 0;
+    let creatorEarnings = parseFloat(creator.earnings) || 0;
+    let transferAmount = parseFloat(request.price);
+
+    // 4. Check pending covers transfer
+    if (userPending < transferAmount) {
+      console.warn(`⚠️  Pending (${userPending}) is less than transfer amount (${transferAmount}) for request ${request._id}`);
+      return res.status(400).json({
+        ok: false,
+        message: "Insufficient pending balance. Please contact support."
+      });
+    }
+
+    // 5. All checks passed — now mark request as completed and paid
+    request.status = "completed";
+    request.paid = true;
+    await request.save();
+
+    // 6. Deduct from user's pending
+    user.pending = String(userPending - transferAmount);
+    await user.save();
+
+    // 7. Add to creator's earnings
+    creator.earnings = String(creatorEarnings + transferAmount);
+    await creator.save();
+
+    // 8. Create transaction histories
+    await historydb.create({
+      userid,
+      details: `${hostType} completed - payment transferred to creator (${requestId})`,
+      spent: `${transferAmount}`,
+      income: "0",
+      date: `${Date.now().toString()}`
+    });
+
+    await historydb.create({
+      userid: creator_portfolio_id,
+      details: `${hostType} completed - payment received (${requestId})`,
+      spent: "0",
+      income: `${transferAmount}`,
+      date: `${Date.now().toString()}`
+    });
 
     // Send notifications
     await sendEmail(userid, `${hostType} completed successfully!`);
     await pushActivityNotification(userid, `${hostType} completed successfully!`, "request_completed");
     
-    if (creator && creator._id) {
-      await sendEmail(creator._id, `${hostType} completed - payment received!`);
-      await pushActivityNotification(creator._id, `${hostType} completed - payment received!`, "request_completed");
-    }
+    await sendEmail(creator._id, `${hostType} completed - payment received!`);
+    await pushActivityNotification(creator._id, `${hostType} completed - payment received!`, "request_completed");
 
     return res.status(200).json({
       ok: true,
