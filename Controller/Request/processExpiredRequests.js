@@ -96,31 +96,30 @@ const backfillMissedRefunds = async () => {
 const processExpiredRequests = async (req, res) => {
   try {
     const now = new Date();
-    const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
-    const twentyDaysAgo = new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000);
+    const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
+const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000);
+
 
     // Backfill missed refunds from threshold change (Fan Call excluded — no refund applies)
     await backfillMissedRefunds();
 
-    // Fan Call: expire after 10 days, no refund
     const expiredFanCallRequests = await requestdb.find({
-      status: "accepted",
-      type: "Fan Call",
-      createdAt: { $lt: tenDaysAgo }
-    }).exec();
+  status: "accepted",
+  type: "Fan Call",
+  createdAt: { $lt: tenMinutesAgo }
+}).exec();
 
-    // Other types: expire after 20 days, refund applies
-    const expiredOtherRequests = await requestdb.find({
-      status: "accepted",
-      type: { $ne: "Fan Call" },
-      createdAt: { $lt: twentyDaysAgo }
-    }).exec();
+const expiredOtherRequests = await requestdb.find({
+  status: "accepted",
+  type: { $ne: "Fan Call" },
+  createdAt: { $lt: twentyMinutesAgo }
+}).exec();
 
-    // Pending requests that passed their expiresAt
-    const expiredPendingRequests = await requestdb.find({
-      status: "request",
-      expiresAt: { $lt: now }
-    }).exec();
+// For pending requests, set expiresAt to 2 minutes when creating
+const expiredPendingRequests = await requestdb.find({
+  status: "request",
+  expiresAt: { $lt: now }
+}).exec();
 
     const allExpiredRequests = [
       ...expiredFanCallRequests,
