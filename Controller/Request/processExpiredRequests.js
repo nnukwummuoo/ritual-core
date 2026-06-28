@@ -92,27 +92,29 @@ const backfillMissedRefunds = async () => {
 // Core logic — no req/res, used by cron
 const processExpiredRequestsCore = async () => {
   const now = new Date();
-  const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000); // test: 10 mins (change to 10 days in prod)
-  const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000); // test: 20 mins (change to 20 days in prod)
 
-  await backfillMissedRefunds();
+   // Backfill missed refunds from threshold change (Fan Call excluded — no refund applies)
+    await backfillMissedRefunds();
 
-  const expiredFanCallRequests = await requestdb.find({
-    status: "accepted",
-    type: "Fan Call",
-    createdAt: { $lt: tenMinutesAgo }
-  }).exec();
+    // Fan Call: expire after 10 days from acceptance, no refund
+const expiredFanCallRequests = await requestdb.find({
+  status: "accepted",
+  type: "Fan Call",
+  expiresAt: { $lt: now }
+}).exec();
 
-  const expiredOtherRequests = await requestdb.find({
-    status: "accepted",
-    type: { $ne: "Fan Call" },
-    createdAt: { $lt: twentyMinutesAgo }
-  }).exec();
+// Other types: expire after 20 days from acceptance, refund applies
+const expiredOtherRequests = await requestdb.find({
+  status: "accepted",
+  type: { $ne: "Fan Call" },
+  expiresAt: { $lt: now }
+}).exec();
 
-  const expiredPendingRequests = await requestdb.find({
-    status: "request",
-    expiresAt: { $lt: now }
-  }).exec();
+    // Pending requests that passed their expiresAt
+    const expiredPendingRequests = await requestdb.find({
+      status: "request",
+      expiresAt: { $lt: now }
+    }).exec();
 
   const allExpiredRequests = [
     ...expiredFanCallRequests,
