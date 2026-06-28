@@ -32,7 +32,7 @@ const refundUser = async (request, hostType) => {
 
   await historydb.create({
     userid: request.userid,
-    details: `${hostType} request expired - automatic refund processed`,
+    details: `${hostType} request expired - automatic refund processed (${request._id})`,
     spent: "0",
     income: `${actualRefundAmount}`,
     date: `${Date.now().toString()}`
@@ -57,12 +57,8 @@ const notifyBoth = async (request, hostType, wasRefunded) => {
   }
 };
 
-// One-time backfill for non-Fan Call requests missed during threshold change (14 -> 20 days)
 const backfillMissedRefunds = async () => {
-  const now = new Date();
-  const twentyDaysAgo = new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000);
-
- const missedOther = await requestdb.find({
+  const missedOther = await requestdb.find({
     status: "expired",
     type: { $ne: "Fan Call" },
     price: { $gt: 0 }
@@ -76,7 +72,7 @@ const backfillMissedRefunds = async () => {
     try {
       const refundExists = await historydb.findOne({
         userid: request.userid,
-        details: { $regex: "expired - automatic refund processed" }
+        details: { $regex: request._id.toString() }
       }).exec();
 
       if (refundExists) continue;
@@ -93,72 +89,71 @@ const backfillMissedRefunds = async () => {
   console.log(`Backfill complete: processed ${backfilled} missed refunds`);
 };
 
+// Core logic — no req/res, used by cron
+const processExpiredRequestsCore = async () => {
+  const now = new Date();
+  const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000); // test: 10 mins (change to 10 days in prod)
+  const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000); // test: 20 mins (change to 20 days in prod)
+
+  await backfillMissedRefunds();
+
+  const expiredFanCallRequests = await requestdb.find({
+    status: "accepted",
+    type: "Fan Call",
+    createdAt: { $lt: tenMinutesAgo }
+  }).exec();
+
+  const expiredOtherRequests = await requestdb.find({
+    status: "accepted",
+    type: { $ne: "Fan Call" },
+    createdAt: { $lt: twentyMinutesAgo }
+  }).exec();
+
+  const expiredPendingRequests = await requestdb.find({
+    status: "request",
+    expiresAt: { $lt: now }
+  }).exec();
+
+  const allExpiredRequests = [
+    ...expiredFanCallRequests,
+    ...expiredOtherRequests,
+    ...expiredPendingRequests
+  ];
+
+  console.log(`Processing ${allExpiredRequests.length} expired requests (${expiredFanCallRequests.length} Fan Call 10min, ${expiredOtherRequests.length} other 20min, ${expiredPendingRequests.length} pending)`);
+
+  for (const request of allExpiredRequests) {
+    try {
+      request.status = "expired";
+      await request.save();
+
+      const hostType = request.type || "Fan meet";
+      const isFanCall = request.type === "Fan Call";
+
+      if (!isFanCall && request.price > 0) {
+        const wasRefunded = await refundUser(request, hostType);
+        await notifyBoth(request, hostType, wasRefunded);
+      } else {
+        await notifyBoth(request, hostType, false);
+      }
+    } catch (err) {
+      console.error(`Error processing request ${request._id}:`, err);
+    }
+  }
+
+  console.log(`Done processing ${allExpiredRequests.length} expired requests`);
+};
+
+// HTTP controller version — used by the route
 const processExpiredRequests = async (req, res) => {
   try {
-    const now = new Date();
-    const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
-const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000);
-
-
-    // Backfill missed refunds from threshold change (Fan Call excluded — no refund applies)
-    await backfillMissedRefunds();
-
-    const expiredFanCallRequests = await requestdb.find({
-  status: "accepted",
-  type: "Fan Call",
-  createdAt: { $lt: tenMinutesAgo }
-}).exec();
-
-const expiredOtherRequests = await requestdb.find({
-  status: "accepted",
-  type: { $ne: "Fan Call" },
-  createdAt: { $lt: twentyMinutesAgo }
-}).exec();
-
-// For pending requests, set expiresAt to 2 minutes when creating
-const expiredPendingRequests = await requestdb.find({
-  status: "request",
-  expiresAt: { $lt: now }
-}).exec();
-
-    const allExpiredRequests = [
-      ...expiredFanCallRequests,
-      ...expiredOtherRequests,
-      ...expiredPendingRequests
-    ];
-
-    console.log(`Processing ${allExpiredRequests.length} expired requests (${expiredFanCallRequests.length} Fan Call 10d, ${expiredOtherRequests.length} other 20d, ${expiredPendingRequests.length} pending)`);
-
-    for (const request of allExpiredRequests) {
-      try {
-        request.status = "expired";
-        await request.save();
-
-        const hostType = request.type || "Fan meet";
-        const isFanCall = request.type === "Fan Call";
-
-        if (!isFanCall && request.price > 0) {
-          // Paid request (Fan Date, Fan Meet, etc.) — refund and notify
-          const wasRefunded = await refundUser(request, hostType);
-          await notifyBoth(request, hostType, wasRefunded);
-        } else {
-          // Fan Call or free request — notify only, no refund
-          await notifyBoth(request, hostType, false);
-        }
-      } catch (err) {
-        console.error(`Error processing request ${request._id}:`, err);
-      }
-    }
-
-    return res.status(200).json({
-      ok: true,
-      message: `Processed ${allExpiredRequests.length} expired requests`
-    });
-
+    await processExpiredRequestsCore();
+    return res.status(200).json({ ok: true, message: "Processed successfully" });
   } catch (err) {
     console.error("Error processing expired requests:", err);
-    return res.status(500).json({ ok: false, message: `${err.message}!` });
+    return res.status(500).json({ ok: false, message: err.message });
   }
 };
 
 module.exports = processExpiredRequests;
+module.exports.core = processExpiredRequestsCore;
