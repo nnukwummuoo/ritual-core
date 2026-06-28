@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { controller } = require("../../Controller/request/processExpiredRequests");
+const { controller } = require("../../Controller/Request/processExpiredRequests");
 
 
 router.post("/", async (req, res) => {
