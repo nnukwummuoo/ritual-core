@@ -3,64 +3,65 @@ const userdb = require("../../Creators/userdb");
 const historydb = require("../../Creators/mainbalance");
 const creatordb = require("../../Creators/creators");
 
-// Socket.io integration
 const { emitFanRequestStatusUpdate } = require('../../utils/socket');
 
-const createLike = async (req, res) => {
+const cancelFanRequest = async (req, res) => {
   const { id, userid, creator_portfolio_id } = req.body;
 
   if (!id) {
-    return res.status(400).json({ ok: false, message: "user Id invalid!!" });
+    return res.status(400).json({ ok: false, message: "Request ID invalid" });
   }
 
-  //let data = await connectdatabase()
-
   try {
-    // Get the request first to get the actual price
     const request = await requestdb.findById(id).exec();
     if (!request) {
-      return res.status(404).json({ ok: false, message: "request not found." });
+      return res.status(404).json({ ok: false, message: "Request not found." });
     }
 
-    let clientuser = await userdb.findOne({ _id: userid }).exec();
+    // Guard: already cancelled or in a final state
+    if (["cancelled", "completed", "expired"].includes(request.status)) {
+      return res.status(400).json({
+        ok: false,
+        message: `Request has already been ${request.status}`
+      });
+    }
+
+    const clientuser = await userdb.findOne({ _id: userid }).exec();
     if (!clientuser) {
       return res.status(404).json({ ok: false, message: "User not found." });
     }
 
-    // Get request type and normalize for comparison
     const normalizedType = (request.type || "").toLowerCase().trim();
     const isFanCall = normalizedType.includes("fan call");
 
-    // Only refund for Fan meet and Fan date, not for Fan call
-    // Fan call requests don't deduct anything, so nothing to refund
-    if (!isFanCall) {
+    // Only refund for non Fan Call requests
+    if (!isFanCall && request.price > 0) {
       let clientbalance = parseFloat(clientuser.balance) || 0;
       let clientpending = parseFloat(clientuser.pending) || 0;
       let refundAmount = parseFloat(request.price);
 
-      // Move money from pending back to balance
-      clientuser.balance = String(clientbalance + refundAmount);
-      clientuser.pending = String(clientpending - refundAmount);
-      await clientuser.save();
+      // Guard: only refund what's actually in pending
+      if (clientpending >= refundAmount) {
+        clientuser.balance = String(clientbalance + refundAmount);
+        clientuser.pending = String(clientpending - refundAmount);
+        await clientuser.save();
 
-      let creatorpaymenthistory = {
-        userid: userid,
-        details: "Fan request cancelled - refund processed",
-        spent: "0",
-        income: `${refundAmount}`,
-        date: `${Date.now().toString()}`,
-      };
-
-      await historydb.create(creatorpaymenthistory);
+        await historydb.create({
+          userid: userid,
+          details: `${request.type || "Fan meet"} request cancelled - refund processed (${id})`,
+          spent: "0",
+          income: `${refundAmount}`,
+          date: `${Date.now().toString()}`
+        });
+      } else {
+        console.warn(`⚠️  Pending (${clientpending}) less than refund amount (${refundAmount}) for cancelled request ${id}`);
+      }
     }
-    
-    // Get request details before deletion for socket emission
-    const requestToDelete = await requestdb.findById(id).exec();
-    
-    const deletedrequest = await requestdb.findByIdAndDelete(id).exec();
 
-    // Emit socket event for real-time updates
-    if (deletedrequest && requestToDelete) {
+    // Delete the request
+    const deletedRequest = await requestdb.findByIdAndDelete(id).exec();
+
+    if (deletedRequest) {
       emitFanRequestStatusUpdate({
         requestId: id,
         status: 'cancelled',
@@ -68,16 +69,16 @@ const createLike = async (req, res) => {
         creator_portfolio_id: creator_portfolio_id,
         message: '🚫 Fan request was cancelled'
       });
+
+      return res.status(200).json({ ok: true, message: "Request cancelled successfully" });
     }
 
-    if (deletedrequest) {
-      return res
-        .status(200)
-        .json({ ok: true, message: `Deleted successfully` });
-    }
-    res.status(404).json({ ok: false, message: "request not found." });
+    return res.status(404).json({ ok: false, message: "Request not found." });
+
   } catch (err) {
+    console.error("Error cancelling fan request:", err);
     return res.status(500).json({ ok: false, message: `${err.message}!` });
   }
 };
-module.exports = createLike;
+
+module.exports = cancelFanRequest;
