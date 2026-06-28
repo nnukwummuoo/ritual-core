@@ -122,7 +122,7 @@ const expiredOtherRequests = await requestdb.find({
     ...expiredPendingRequests
   ];
 
-  console.log(`Processing ${allExpiredRequests.length} expired requests (${expiredFanCallRequests.length} Fan Call 10min, ${expiredOtherRequests.length} other 20min, ${expiredPendingRequests.length} pending)`);
+  console.log(`Processing ${allExpiredRequests.length} expired requests (${expiredFanCallRequests.length} Fan Call 10d, ${expiredOtherRequests.length} other 20d, ${expiredPendingRequests.length} pending)`);
 
   for (const request of allExpiredRequests) {
     try {
