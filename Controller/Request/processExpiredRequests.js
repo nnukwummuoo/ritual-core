@@ -115,3 +115,5 @@ const processExpiredRequests = async (req, res) => {
     });
   }
 };
+
+module.exports = processExpiredRequests;
