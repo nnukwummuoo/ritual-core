@@ -2,8 +2,10 @@ const requestdb = require("../../Creators/requsts");
 const userdb = require("../../Creators/userdb");
 const creatordb = require("../../Creators/creators");
 const historydb = require("../../Creators/mainbalance");
+const admindb = require("../../Creators/admindb");
 let sendEmail = require("../../utiils/sendEmailnot");
 let { pushActivityNotification } = require("../../utiils/sendPushnot");
+const { emitFanRequestStatusUpdate } = require('../../utils/socket');
 
 const completeFanRequest = async (req, res) => {
   const {
@@ -58,7 +60,7 @@ const completeFanRequest = async (req, res) => {
     if (!creatorProfile) {
       creatorProfile = await creatordb.findOne({ _id: creator_portfolio_id }).exec();
     }
-    const hostType = request.type || creatorProfile?.hosttype || "Fan meet";
+    const hostType = request.type || creatorProfile?.hosttype || "Fan request";
 
     if (!user || !creator) {
       return res.status(404).json({
@@ -80,7 +82,7 @@ const completeFanRequest = async (req, res) => {
       });
     }
 
-    // 5. All checks passed — now mark request as completed and paid
+    // 5. Mark request as completed and paid
     request.status = "completed";
     request.paid = true;
     await request.save();
@@ -103,19 +105,40 @@ const completeFanRequest = async (req, res) => {
     });
 
     await historydb.create({
-      userid: creator_portfolio_id,
+      userid: creator._id, // ← use actual creator user ID
       details: `${hostType} completed - payment received (${requestId})`,
       spent: "0",
       income: `${transferAmount}`,
       date: `${Date.now().toString()}`
     });
 
-    // Send notifications
+    // 9. Emit socket event
+    emitFanRequestStatusUpdate({
+      requestId: request._id,
+      status: 'completed',
+      userid: userid,
+      creator_portfolio_id: creator_portfolio_id,
+      message: `✅ ${hostType} has been completed!`
+    });
+
+    // 10. Send notifications
     await sendEmail(userid, `${hostType} completed successfully!`);
     await pushActivityNotification(userid, `${hostType} completed successfully!`, "request_completed");
-    
+
+    await admindb.create({
+      userid: userid,
+      message: `${hostType} completed successfully!`,
+      seen: false
+    });
+
     await sendEmail(creator._id, `${hostType} completed - payment received!`);
     await pushActivityNotification(creator._id, `${hostType} completed - payment received!`, "request_completed");
+
+    await admindb.create({
+      userid: creator._id,
+      message: `${hostType} completed - payment received!`,
+      seen: false
+    });
 
     return res.status(200).json({
       ok: true,
