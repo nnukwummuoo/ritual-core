@@ -48,7 +48,7 @@ const cancelFanRequest = async (req, res) => {
 
         await historydb.create({
           userid: userid,
-          details: `${request.type || "Fan meet"} request cancelled - refund processed (${id})`,
+          details: `${request.type || "Fan request"} request cancelled - refund processed (${id})`,
           spent: "0",
           income: `${refundAmount}`,
           date: `${Date.now().toString()}`

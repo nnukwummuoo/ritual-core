@@ -67,7 +67,7 @@ const acceptFanRequest = async (req, res) => {
 
           await historydb.create({
             userid,
-            details: `Fan meet request expired - refund processed (${requestId})`,
+            details: `Fan request expired - refund processed (${requestId})`,
             spent: "0",
             income: `${refundAmount}`,
             date: `${Date.now().toString()}`
@@ -94,14 +94,14 @@ const acceptFanRequest = async (req, res) => {
 
     await existingRequest.save();
 
-    const hostType = existingRequest.type || "Fan meet";
+    const hostType = existingRequest.type || "Fan request";
 
-    await sendEmail(userid, `Your ${hostType.toLowerCase()} request has been accepted!`);
-    await pushActivityNotification(userid, `Your ${hostType.toLowerCase()} request has been accepted!`, "request_accepted");
+    await sendEmail(userid, `Creator has accepted your ${hostType.toLowerCase()} request`);
+    await pushActivityNotification(userid, `Creator has accepted your ${hostType.toLowerCase()} request`, "request_accepted");
 
     await admindb.create({
       userid: userid,
-      message: `Your ${hostType.toLowerCase()} request has been accepted!`,
+      message: `Creator has accepted your ${hostType.toLowerCase()} request`,
       seen: false
     });
 
@@ -111,7 +111,7 @@ const acceptFanRequest = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error accepting fan meet request:", err);
+    console.error("Error accepting request:", err);
     return res.status(500).json({
       ok: false,
       message: `${err.message}!`

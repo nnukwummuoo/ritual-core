@@ -54,7 +54,7 @@ const declineFanRequest = async (req, res) => {
     existingRequest.status = "declined";
     await existingRequest.save();
 
-    const hostType = existingRequest.type || "Fan meet";
+    const hostType = existingRequest.type || "Fan request";
     const normalizedType = (hostType || "").toLowerCase().trim();
     const isFanCall = normalizedType.includes("fan call");
 
@@ -86,12 +86,12 @@ const declineFanRequest = async (req, res) => {
     }
 
     // Notifications
-    await sendEmail(userid, `Your ${hostType.toLowerCase()} request has been declined`);
-    await pushmessage(userid, `Your ${hostType.toLowerCase()} request has been declined`, "/icons/m-logo.png");
+    await sendEmail(userid, `Creator has declined your ${hostType.toLowerCase()} request`);
+    await pushmessage(userid, `Creator has declined your ${hostType.toLowerCase()} request`, "/icons/m-logo.png");
 
     await admindb.create({
       userid: userid,
-      message: `Your ${hostType.toLowerCase()} request has been declined`,
+      message: `Creator has declined your ${hostType.toLowerCase()} request`,
       seen: false
     });
 
@@ -110,7 +110,7 @@ const declineFanRequest = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error declining fan meet request:", err);
+    console.error("Error declining request:", err);
     return res.status(500).json({
       ok: false,
       message: `${err.message}!`
