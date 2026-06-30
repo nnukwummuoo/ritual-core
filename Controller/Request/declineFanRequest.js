@@ -4,6 +4,7 @@ const historydb = require("../../Creators/mainbalance");
 const admindb = require("../../Creators/admindb");
 let sendEmail = require("../../utiils/sendEmailnot");
 const { pushmessage } = require("../../utiils/sendPushnot");
+const { emitFanRequestStatusUpdate } = require('../../utils/socket');
 
 const declineFanRequest = async (req, res) => {
   const {
@@ -20,7 +21,6 @@ const declineFanRequest = async (req, res) => {
   }
 
   try {
-    // Find request without status filter first
     const existingRequest = await requestdb.findOne({ 
       _id: requestId,
       creator_portfolio_id: creator_portfolio_id,
@@ -34,7 +34,6 @@ const declineFanRequest = async (req, res) => {
       });
     }
 
-    // If already declined, return success silently — no double refund
     if (existingRequest.status === "declined") {
       return res.status(200).json({
         ok: true,
@@ -42,7 +41,6 @@ const declineFanRequest = async (req, res) => {
       });
     }
 
-    // Block if already in a final state
     if (["accepted", "expired", "completed", "cancelled"].includes(existingRequest.status)) {
       return res.status(400).json({
         ok: false,
@@ -50,7 +48,6 @@ const declineFanRequest = async (req, res) => {
       });
     }
 
-    // Update request status to declined
     existingRequest.status = "declined";
     await existingRequest.save();
 
@@ -58,7 +55,6 @@ const declineFanRequest = async (req, res) => {
     const normalizedType = (hostType || "").toLowerCase().trim();
     const isFanCall = normalizedType.includes("fan call");
 
-    // Only refund for non Fan Call requests
     if (!isFanCall && existingRequest.price > 0) {
       const user = await userdb.findOne({ _id: userid }).exec();
       if (user) {
@@ -66,7 +62,6 @@ const declineFanRequest = async (req, res) => {
         let userPending = parseFloat(user.pending) || 0;
         let refundAmount = parseFloat(existingRequest.price);
 
-        // Guard: only refund what's actually in pending
         if (userPending >= refundAmount) {
           user.balance = String(userBalance + refundAmount);
           user.pending = String(userPending - refundAmount);
@@ -85,7 +80,15 @@ const declineFanRequest = async (req, res) => {
       }
     }
 
-    // Notifications
+    // Emit socket event
+    emitFanRequestStatusUpdate({
+      requestId: existingRequest._id,
+      status: 'declined',
+      userid: userid,
+      creator_portfolio_id: creator_portfolio_id,
+      message: `❌ ${hostType} request was declined`
+    });
+
     await sendEmail(userid, `Creator has declined your ${hostType.toLowerCase()} request`);
     await pushmessage(userid, `Creator has declined your ${hostType.toLowerCase()} request`, "/icons/m-logo.png");
 
@@ -110,7 +113,7 @@ const declineFanRequest = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error declining request:", err);
+    console.error("Error declining fan request:", err);
     return res.status(500).json({
       ok: false,
       message: `${err.message}!`
