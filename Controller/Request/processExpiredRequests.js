@@ -89,12 +89,52 @@ const backfillMissedRefunds = async () => {
   console.log(`Backfill complete: processed ${backfilled} missed refunds`);
 };
 
+const processEndedSessions = async () => {
+  const now = new Date();
+
+  const endedSessions = await requestdb.find({
+    status: "accepted",
+    sessionEndAt: { $lt: now },
+    sessionNotified: { $ne: true }
+  }).exec();
+
+  console.log(`Processing ${endedSessions.length} ended sessions`);
+
+  for (const request of endedSessions) {
+    try {
+      const hostType = request.type || "Fan meet";
+      const creatorRecord = await creatordb.findOne({ _id: request.creator_portfolio_id }).exec();
+
+      const fanMessage = `✅ Your ${hostType} has ended! Please mark it as complete in your request card so your creator can receive payment.`;
+      const creatorMessage = `✅ ${hostType} has ended! Please mark it as complete in your request card so your creator can receive payment.`;
+
+      await sendEmail(request.userid, fanMessage);
+      await pushActivityNotification(request.userid, fanMessage, "session_update");
+      await admindb.create({ userid: request.userid, message: fanMessage, seen: false });
+
+      if (creatorRecord?.userid) {
+        await sendEmail(creatorRecord.userid, creatorMessage);
+        await pushActivityNotification(creatorRecord.userid, creatorMessage, "session_update");
+        await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false });
+      }
+
+      // Mark as notified so it doesn't fire again
+      request.sessionNotified = true;
+      await request.save();
+
+    } catch (err) {
+      console.error(`Error processing ended session ${request._id}:`, err);
+    }
+  }
+};
+
 // Core logic — no req/res, used by cron
 const processExpiredRequestsCore = async () => {
   const now = new Date();
 
    // Backfill missed refunds from threshold change (Fan Call excluded — no refund applies)
     await backfillMissedRefunds();
+    await processEndedSessions();
 
     // Fan Call: expire after 10 days from acceptance, no refund
 const expiredFanCallRequests = await requestdb.find({

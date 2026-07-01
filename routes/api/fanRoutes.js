@@ -35,7 +35,7 @@ router.get("/requests", getFanRequests);
 router.post("/process-expired", processExpiredRequests);
 
 router.post("/notify-session", async (req, res) => {
-  const { fanUserid, creatorUserid, hosttype, event } = req.body;
+  const { fanUserid, creatorUserid, hosttype, event, requestId } = req.body;
 
   if (!fanUserid || !hosttype || !event) {
     return res.status(400).json({ ok: false, message: "Missing parameters" });
@@ -49,6 +49,13 @@ router.post("/notify-session", async (req, res) => {
     const creatorMessage = event === 'started'
       ? `🎉 ${hosttype} has started!`
       : `✅ ${hosttype} has ended. Your fan will be notified to mark it as complete — once they do, your payment is released instantly. If they don't, contact Mmeko Support and we will release your payment immediately.`;
+      
+       // Save session end time to DB when started
+    if (event === 'started' && requestId) {
+      const sessionEndAt = new Date(Date.now() + 30 * 60 * 1000);
+      await requestdb.findByIdAndUpdate(requestId, { sessionEndAt });
+    }
+
 
     // Notify fan
     await sendEmail(fanUserid, fanMessage);
