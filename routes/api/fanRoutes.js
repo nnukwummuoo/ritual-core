@@ -44,11 +44,11 @@ router.post("/notify-session", async (req, res) => {
   try {
     const fanMessage = event === 'started'
       ? `🎉 Your ${hosttype} has started!`
-      : `✅ Your ${hosttype} has ended. Hope you had a great time!`;
+      : `✅ Your ${hosttype} has ended! Please mark it as complete in your request card so your creator can receive payment.`;
 
     const creatorMessage = event === 'started'
       ? `🎉 ${hosttype} has started!`
-      : `✅ ${hosttype} has ended!`;
+      : `✅ ${hosttype} has ended. Your fan will be notified to mark it as complete — once they do, your payment is released instantly. If they don't, contact Mmeko Support and we will release your payment immediately.`;
 
     // Notify fan
     await sendEmail(fanUserid, fanMessage);
