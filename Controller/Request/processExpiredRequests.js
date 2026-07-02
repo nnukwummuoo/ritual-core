@@ -142,12 +142,10 @@ const processEndedSessions = async () => {
       const fanMessage = "✅ Your " + hostType + " has ended! Please mark it as complete in your request card so your creator can receive payment.";
       const creatorMessage = "✅ Your " + hostType + " has ended. Your fan will be notified to mark it as complete — once they do, your payment is released instantly. If they don't, contact Mmeko Support and we will release your payment immediately.";
 
-      try { await sendEmail(request.userid, fanMessage); } catch(e) { console.error("sendEmail fan failed: " + e.message); }
       try { await pushActivityNotification(request.userid, fanMessage, "session_update"); } catch(e) { console.error("push fan failed: " + e.message); }
       try { await admindb.create({ userid: request.userid, message: fanMessage, seen: false }); } catch(e) { console.error("admindb fan failed: " + e.message); }
 
       if (creatorRecord?.userid) {
-        try { await sendEmail(creatorRecord.userid, creatorMessage); } catch(e) { console.error("sendEmail creator failed: " + e.message); }
         try { await pushActivityNotification(creatorRecord.userid, creatorMessage, "session_update"); } catch(e) { console.error("push creator failed: " + e.message); }
         try { await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false }); } catch(e) { console.error("admindb creator failed: " + e.message); }
       }
