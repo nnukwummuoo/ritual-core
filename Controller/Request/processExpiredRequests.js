@@ -94,36 +94,6 @@ const backfillMissedRefunds = async () => {
 const processEndedSessions = async () => {
   const now = new Date();
 
-  const startedSessions = await requestdb.find({
-    status: "accepted",
-    sessionEndAt: { $exists: true },
-    startNotified: { $ne: true }
-  }).exec();
-
-  console.log("Processing " + startedSessions.length + " started sessions");
-
-  for (const request of startedSessions) {
-    try {
-      const hostType = request.type || "Fan meet";
-      const creatorRecord = await creatordb.findOne({ _id: request.creator_portfolio_id }).exec();
-
-      const fanMessage = "🎉 Your " + hostType + " has started!";
-      const creatorMessage = "🎉Your " + hostType + " has started!";
-
-      try { await admindb.create({ userid: request.userid, message: fanMessage, seen: false }); } catch(e) { console.error("admindb fan failed: " + e.message); }
-
-      if (creatorRecord?.userid) {
-        try { await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false }); } catch(e) { console.error("admindb creator failed: " + e.message); }
-      }
-
-      request.startNotified = true;
-      await request.save();
-
-    } catch (err) {
-      console.error("Error processing started session " + request._id + ": " + err.message);
-    }
-  }
-
   const endedSessions = await requestdb.find({
     status: "accepted",
     sessionEndAt: { $lt: now },

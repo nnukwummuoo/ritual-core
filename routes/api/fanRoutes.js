@@ -46,8 +46,6 @@ router.post("/notify-session", async (req, res) => {
     const sessionEndAt = new Date(Date.now() + 30 * 60 * 1000);
     await requestdb.findByIdAndUpdate(requestId, { 
       sessionEndAt,
-      startNotified: false,
-      sessionNotified: false 
     });
     return res.status(200).json({ ok: true });
   } catch (err) {
