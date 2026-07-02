@@ -107,7 +107,7 @@ const processEndedSessions = async () => {
       const creatorRecord = await creatordb.findOne({ _id: request.creator_portfolio_id }).exec();
 
       const fanMessage = `✅ Your ${hostType} has ended! Please mark it as complete in your request card so your creator can receive payment.`;
-      const creatorMessage = `✅ ${hostType} has ended! Please mark it as complete in your request card so your creator can receive payment.`;
+      const creatorMessage = `✅ Your ${hostType} has ended. Your fan will be notified to mark it as complete — once they do, your payment is released instantly. If they don't, contact Mmeko Support and we will release your payment immediately.`;
 
       await sendEmail(request.userid, fanMessage);
       await pushActivityNotification(request.userid, fanMessage, "session_update");
