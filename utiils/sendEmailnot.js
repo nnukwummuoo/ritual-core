@@ -14,15 +14,13 @@ let sendnote = async(userid, message)=>{
     let userInfo = await userdb.findOne({_id:userid}).exec()
     let settingON = await settingdb.findOne({userid:userid}).exec()
 
-    if(userInfo){
-        if(userInfo.active === false){
-            if(settingON){
-                if(settingON.emailnot === true){
-                  await sendTomail(`${userInfo.firstname} ${userInfo.lastname}`, message, userInfo.email,)
-                }
-            }
-        }
+   if(userInfo){
+  if(settingON){
+    if(settingON.emailnot === true){
+      await sendTomail(`${userInfo.firstname} ${userInfo.lastname}`, message, userInfo.email);
     }
+  }
+}
 
     
 
