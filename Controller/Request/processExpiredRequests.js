@@ -90,76 +90,75 @@ const backfillMissedRefunds = async () => {
   console.log(`Backfill complete: processed ${backfilled} missed refunds`);
 };
 
+ 
 const processEndedSessions = async () => {
   const now = new Date();
 
-  // Handle start notifications — sessionEndAt exists but startNotified is false
   const startedSessions = await requestdb.find({
     status: "accepted",
     sessionEndAt: { $exists: true },
     startNotified: { $ne: true }
   }).exec();
 
-  console.log(`Processing ${startedSessions.length} started sessions`);
+  console.log("Processing " + startedSessions.length + " started sessions");
 
   for (const request of startedSessions) {
     try {
       const hostType = request.type || "Fan meet";
       const creatorRecord = await creatordb.findOne({ _id: request.creator_portfolio_id }).exec();
 
-      const fanMessage = `🎉 Your ${hostType} has started!`;
-      const creatorMessage = `🎉 ${hostType} has started!`;
+      const fanMessage = "🎉 Your " + hostType + " has started!";
+      const creatorMessage = "🎉 " + hostType + " has started!";
 
-      await sendEmail(request.userid, fanMessage);
-      await pushActivityNotification(request.userid, fanMessage, "session_update");
-      await admindb.create({ userid: request.userid, message: fanMessage, seen: false });
+      try { await sendEmail(request.userid, fanMessage); } catch(e) { console.error("sendEmail fan failed: " + e.message); }
+      try { await pushActivityNotification(request.userid, fanMessage, "session_update"); } catch(e) { console.error("push fan failed: " + e.message); }
+      try { await admindb.create({ userid: request.userid, message: fanMessage, seen: false }); } catch(e) { console.error("admindb fan failed: " + e.message); }
 
       if (creatorRecord?.userid) {
-        await sendEmail(creatorRecord.userid, creatorMessage);
-        await pushActivityNotification(creatorRecord.userid, creatorMessage, "session_update");
-        await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false });
+        try { await sendEmail(creatorRecord.userid, creatorMessage); } catch(e) { console.error("sendEmail creator failed: " + e.message); }
+        try { await pushActivityNotification(creatorRecord.userid, creatorMessage, "session_update"); } catch(e) { console.error("push creator failed: " + e.message); }
+        try { await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false }); } catch(e) { console.error("admindb creator failed: " + e.message); }
       }
 
       request.startNotified = true;
       await request.save();
 
     } catch (err) {
-      console.error(`Error processing started session ${request._id}:`, err);
+      console.error("Error processing started session " + request._id + ": " + err.message);
     }
   }
 
-  // Handle end notifications — sessionEndAt has passed and not yet notified
   const endedSessions = await requestdb.find({
     status: "accepted",
     sessionEndAt: { $lt: now },
     sessionNotified: { $ne: true }
   }).exec();
 
-  console.log(`Processing ${endedSessions.length} ended sessions`);
+  console.log("Processing " + endedSessions.length + " ended sessions");
 
   for (const request of endedSessions) {
     try {
       const hostType = request.type || "Fan meet";
       const creatorRecord = await creatordb.findOne({ _id: request.creator_portfolio_id }).exec();
 
-      const fanMessage = `✅ Your ${hostType} has ended! Please mark it as complete in your request card so your creator can receive payment.`;
-      const creatorMessage = `✅ Your ${hostType} has ended. Your fan will be notified to mark it as complete — once they do, your payment is released instantly. If they don't, contact Mmeko Support and we will release your payment immediately.`;
+      const fanMessage = "✅ Your " + hostType + " has ended! Please mark it as complete in your request card so your creator can receive payment.";
+      const creatorMessage = "✅ " + hostType + " has ended. Your fan will be notified to mark it as complete — once they do, your payment is released instantly. If they don't, contact Mmeko Support and we will release your payment immediately.";
 
-      await sendEmail(request.userid, fanMessage);
-      await pushActivityNotification(request.userid, fanMessage, "session_update");
-      await admindb.create({ userid: request.userid, message: fanMessage, seen: false });
+      try { await sendEmail(request.userid, fanMessage); } catch(e) { console.error("sendEmail fan failed: " + e.message); }
+      try { await pushActivityNotification(request.userid, fanMessage, "session_update"); } catch(e) { console.error("push fan failed: " + e.message); }
+      try { await admindb.create({ userid: request.userid, message: fanMessage, seen: false }); } catch(e) { console.error("admindb fan failed: " + e.message); }
 
       if (creatorRecord?.userid) {
-        await sendEmail(creatorRecord.userid, creatorMessage);
-        await pushActivityNotification(creatorRecord.userid, creatorMessage, "session_update");
-        await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false });
+        try { await sendEmail(creatorRecord.userid, creatorMessage); } catch(e) { console.error("sendEmail creator failed: " + e.message); }
+        try { await pushActivityNotification(creatorRecord.userid, creatorMessage, "session_update"); } catch(e) { console.error("push creator failed: " + e.message); }
+        try { await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false }); } catch(e) { console.error("admindb creator failed: " + e.message); }
       }
 
       request.sessionNotified = true;
       await request.save();
 
     } catch (err) {
-      console.error(`Error processing ended session ${request._id}:`, err);
+      console.error("Error processing ended session " + request._id + ": " + err.message);
     }
   }
 };
