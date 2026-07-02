@@ -20,10 +20,10 @@ const pushmessage = async (userid, message, icon, options = {}) => {
     });
     
 
-    let pushOptions = {
-      TTL: 172800,
-      urgency: "high",
-    };
+   let pushOptions = {
+  TTL: 604800, // 7 days instead of 172800 (2 days)
+  urgency: "high",
+};
 
     webpush.setVapidDetails(
       "mailto:noreply.mmeko@gmail.com",
