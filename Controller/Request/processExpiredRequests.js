@@ -93,6 +93,42 @@ const backfillMissedRefunds = async () => {
 const processEndedSessions = async () => {
   const now = new Date();
 
+  // Handle start notifications — sessionEndAt exists but startNotified is false
+  const startedSessions = await requestdb.find({
+    status: "accepted",
+    sessionEndAt: { $exists: true },
+    startNotified: { $ne: true }
+  }).exec();
+
+  console.log(`Processing ${startedSessions.length} started sessions`);
+
+  for (const request of startedSessions) {
+    try {
+      const hostType = request.type || "Fan meet";
+      const creatorRecord = await creatordb.findOne({ _id: request.creator_portfolio_id }).exec();
+
+      const fanMessage = `🎉 Your ${hostType} has started!`;
+      const creatorMessage = `🎉 ${hostType} has started!`;
+
+      await sendEmail(request.userid, fanMessage);
+      await pushActivityNotification(request.userid, fanMessage, "session_update");
+      await admindb.create({ userid: request.userid, message: fanMessage, seen: false });
+
+      if (creatorRecord?.userid) {
+        await sendEmail(creatorRecord.userid, creatorMessage);
+        await pushActivityNotification(creatorRecord.userid, creatorMessage, "session_update");
+        await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false });
+      }
+
+      request.startNotified = true;
+      await request.save();
+
+    } catch (err) {
+      console.error(`Error processing started session ${request._id}:`, err);
+    }
+  }
+
+  // Handle end notifications — sessionEndAt has passed and not yet notified
   const endedSessions = await requestdb.find({
     status: "accepted",
     sessionEndAt: { $lt: now },
@@ -119,7 +155,6 @@ const processEndedSessions = async () => {
         await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false });
       }
 
-      // Mark as notified so it doesn't fire again
       request.sessionNotified = true;
       await request.save();
 

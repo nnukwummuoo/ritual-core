@@ -53,6 +53,10 @@ const markertdata = new Scheme(
 sessionNotified: {
   type: Boolean,
   default: false,
+},
+startNotified: {
+  type: Boolean,
+  default: false,
 }
   },
   { timestamps: true }

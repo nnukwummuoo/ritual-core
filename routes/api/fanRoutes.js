@@ -36,40 +36,19 @@ router.get("/requests", getFanRequests);
 router.post("/process-expired", processExpiredRequests);
 
 router.post("/notify-session", async (req, res) => {
-  const { fanUserid, creatorUserid, hosttype, event, requestId } = req.body;
+  const { requestId } = req.body;
 
-  if (!fanUserid || !hosttype || !event) {
-    return res.status(400).json({ ok: false, message: "Missing parameters" });
+  if (!requestId) {
+    return res.status(400).json({ ok: false, message: "Missing requestId" });
   }
 
   try {
-    const fanMessage = event === 'started'
-      ? `🎉 Your ${hosttype} has started!`
-      : `✅ Your ${hosttype} has ended! Please mark it as complete in your request card so your creator can receive payment.`;
-
-    const creatorMessage = event === 'started'
-      ? `🎉 Your ${hosttype} has started!`
-      : `✅ Your ${hosttype} has ended. Your fan will be notified to mark it as complete — once they do, your payment is released instantly. If they don't, contact Mmeko Support and we will release your payment immediately.`;
-      
-       // Save session end time to DB when started
-    if (event === 'started' && requestId) {
-      const sessionEndAt = new Date(Date.now() + 30 * 60 * 1000);
-      await requestdb.findByIdAndUpdate(requestId, { sessionEndAt });
-    }
-
-
-    // Notify fan
-    await sendEmail(fanUserid, fanMessage);
-    await pushActivityNotification(fanUserid, fanMessage, "session_update");
-    await admindb.create({ userid: fanUserid, message: fanMessage, seen: false });
-
-    // Notify creator
-    if (creatorUserid) {
-      await sendEmail(creatorUserid, creatorMessage);
-      await pushActivityNotification(creatorUserid, creatorMessage, "session_update");
-      await admindb.create({ userid: creatorUserid, message: creatorMessage, seen: false });
-    }
-
+    const sessionEndAt = new Date(Date.now() + 30 * 60 * 1000);
+    await requestdb.findByIdAndUpdate(requestId, { 
+      sessionEndAt,
+      startNotified: false,
+      sessionNotified: false 
+    });
     return res.status(200).json({ ok: true });
   } catch (err) {
     return res.status(500).json({ ok: false, message: err.message });
