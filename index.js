@@ -7,8 +7,6 @@ validateEnv();
 const { loginLimiter, forgotPasswordLimiter } = require("./Middleware/authRateLimit");
 
 const express = require("express");
-
-const express = require("express");
 const http = require("http");
 
 const cookieParser = require("cookie-parser");
