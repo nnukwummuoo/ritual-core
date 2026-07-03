@@ -1,5 +1,9 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+
+const TOKEN_LIFETIME_SECONDS = 30 * 24 * 60 * 60; // 30 days — must match logins.js expiresIn
+const REFRESH_THRESHOLD_SECONDS = TOKEN_LIFETIME_SECONDS / 2; // reissue once under 15 days remain
+
 const verifyJwt = (req, res, next) => {
   const authHeader = req.headers.authorization || req.headers.Authorization;
 
@@ -9,57 +13,31 @@ const verifyJwt = (req, res, next) => {
 
   const token = authHeader.split(" ")[1];
 
-  // Try multiple possible secrets to handle JWT secret mismatches
-  const possibleSecrets = [
-    process.env.ACCESS_TOKEN_SECRET,
-    process.env.REFRESH_TOKEN_SECRET,
-    "NEXT_PUBLIC_SECERET",
-    "access_token",
-    "refrsh_token"
-  ].filter(Boolean);
+  try {
+    const decode = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    req.userId = decode.UserInfo.userId;
+    req.isAdmin = decode.UserInfo.isAdmin;
 
-  let tokenVerified = false;
-  let finalDecode = null;
-
-         // Try each secret
-         for (const secret of possibleSecrets) {
-           try {
-             const decode = jwt.verify(token, secret);
-             tokenVerified = true;
-             finalDecode = decode;
-             break;
-           } catch (err) {
-             // Continue to next secret
-           }
-         }
-
-  if (!tokenVerified) {
-    // Use the decoded token without signature verification as a fallback
-    try {
-      const decoded = jwt.decode(token);
-      if (decoded && decoded.UserInfo) {
-        finalDecode = decoded;
-        tokenVerified = true;
-      } else {
-        return res.status(403).json({ 
-          message: "Token verification failed. Please log in again to get a fresh token.",
-          code: "TOKEN_INVALID"
-        });
-      }
-    } catch (err) {
-      return res.status(403).json({ 
-        message: "Token verification failed. Please log in again to get a fresh token.",
-        code: "TOKEN_INVALID"
-      });
+    // Sliding expiration: silently reissue a fresh 30-day token once this one
+    // is past the halfway point of its life, so active users never hit a hard expiry.
+    const remaining = decode.exp - Math.floor(Date.now() / 1000);
+    if (remaining < REFRESH_THRESHOLD_SECONDS) {
+      const newToken = jwt.sign(
+        { UserInfo: decode.UserInfo },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "30d" }
+      );
+      res.setHeader("X-New-Access-Token", newToken);
+      res.setHeader("Access-Control-Expose-Headers", "X-New-Access-Token");
     }
-  }
 
-  // If we get here, token was verified successfully
-  const decode = finalDecode;
-    
-  req.userId = decode.UserInfo.userId;
-  req.isAdmin = decode.UserInfo.isAdmin;
-  next();
+    next();
+  } catch (err) {
+    return res.status(403).json({
+      message: "Token verification failed. Please log in again.",
+      code: "TOKEN_INVALID",
+    });
+  }
 };
 
 module.exports = verifyJwt;

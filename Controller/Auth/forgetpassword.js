@@ -43,17 +43,17 @@ const forgetpass = async (req, res) => {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedNewPassword;
 
-    // 4️⃣ Generate new tokens
+    // 4️⃣ Generate new tokens (30d, matching login's convention)
     const refreshToken = jwt.sign(
-      { UserInfo: { username: user.username } },
+      { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin } },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "30d" }
     );
 
     const accessToken = jwt.sign(
-      { UserInfo: { username: user.username, userId: user._id.toString() } },
+      { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin } },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "30d" }
     );
 
     user.refreshtoken = refreshToken;
@@ -65,14 +65,14 @@ const forgetpass = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Lax",
-      maxAge: 15 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
     res.cookie("refresh_token", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
     return res.status(200).json({

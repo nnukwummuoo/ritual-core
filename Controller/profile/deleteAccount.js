@@ -1,20 +1,3 @@
-// let deleteaccount = require("../../utiils/Deletes/deleteaccount")
-
-// let deleteAcc = async(req, res)=>{
-//     let userid = req.body.userid
-
-//     if(!userid){
-//         return res.status(400).json({"ok":false,'message': 'Invalid exclusive ID!!'})
-//     }
-
-//     await deleteaccount(userid)
-
-//     return res.status(200).json({"ok":true,'message': 'Account Delete Success'})
-
-
-// }
-
-// module.exports = deleteAcc;
 const userdb = require("../../Creators/userdb");
 const deleteaccount = require("../../utiils/Deletes/deleteaccount");
 const creators = require("../../Creators/creators");
@@ -23,23 +6,14 @@ const exclusivepurchase = require("../../Creators/exclusivePurshase");
 const deleteImage = require("../../utiils/deleteImage");
 
 const deleteAcc = async (req, res) => {
-  const userid = req.body.userid;
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const userid = req.userId;
 
-  console.log("🗑️ [deleteAcc] Request received:", { userid, hasToken: !!token });
+  console.log("🗑️ [deleteAcc] Request received for authenticated userId:", userid);
 
   if (!userid) {
     return res.status(400).json({
       "ok": false,
       'message': 'User ID invalid!!'
-    });
-  }
-
-  // Optional: Verify token if your auth middleware isn't handling it
-  if (!token) {
-    return res.status(401).json({
-      "ok": false,
-      'message': 'Authorization token required'
     });
   }
 
@@ -137,7 +111,7 @@ const deleteAcc = async (req, res) => {
     console.error('❌ [deleteAcc] Error deleting user:', err);
     return res.status(500).json({
       "ok": false,
-      'message': `Failed to delete account: ${err.message}`
+      'message': 'Failed to delete account. Please try again.'
     });
   }
 };
