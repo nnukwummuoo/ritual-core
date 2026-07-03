@@ -4,6 +4,10 @@ dotenv.config();
 const validateEnv = require("./config/validateEnv");
 validateEnv();
 
+const { loginLimiter, forgotPasswordLimiter } = require("./Middleware/authRateLimit");
+
+const express = require("express");
+
 const express = require("express");
 const http = require("http");
 
