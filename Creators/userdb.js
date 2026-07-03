@@ -24,6 +24,8 @@ const markertdata = new Scheme(
       required: false,
       unique: true,
       sparse: true, // allow multiple null/empty, unique only for non-empty
+      lowercase: true,
+      trim: true,
     },
 
     bio: {

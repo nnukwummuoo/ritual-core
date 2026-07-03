@@ -139,8 +139,8 @@ const handleNewUser = async (req, res) => {
     const newUserReferralCode = await generateReferralCode();
 
     // Create tokens
-    const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || "NEXT_PUBLIC_SECERET";
-    const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET || "NEXT_PUBLIC_SECERET";
+    const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+    const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 
     const refreshToken = jwt.sign(
       { UserInfo: { username: username, userId: "", isAdmin: false } },
@@ -255,7 +255,7 @@ const handleNewUser = async (req, res) => {
     console.error("❌ Registration error:", err);
     return res.status(500).json({
       ok: false,
-      message: `Registration error: ${err.message}`,
+      message: "Something went wrong. Please try again.",
     });
   }
 };

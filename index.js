@@ -1,5 +1,9 @@
 const dotenv = require("dotenv");
 dotenv.config();
+
+const validateEnv = require("./config/validateEnv");
+validateEnv();
+
 const express = require("express");
 const http = require("http");
 
@@ -159,8 +163,8 @@ app.use("/subpushid", require("./routes/api/profile/postUserPushNote"));
 app.use("/verifyemail", require("./routes/Auth/verifyEmail"));
 app.use("/register", require("./routes/Auth/register"));
 app.use("/logout", require("./routes/Auth/logout"));
-app.use("/login", require("./routes/Auth/login"));
-app.use("/forgetpassword", require("./routes/Auth/forgetpassword"));
+app.use("/login", loginLimiter, require("./routes/Auth/login"));
+app.use("/forgetpassword", forgotPasswordLimiter, require("./routes/Auth/forgetpassword"));
 app.use("/completeregister", require("./routes/Auth/completeregister"));
 app.use("/comfirmpasscode", require("./routes/Auth/comfirmpasscode"));
 app.use("/changepassword", require("./routes/Auth/changepassword"));

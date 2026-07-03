@@ -23,7 +23,7 @@ const handleLogin = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         ok: false,
-        message: "User not registered.",
+        message: "Invalid username or password.",
       });
     }
 
@@ -43,8 +43,8 @@ const handleLogin = async (req, res) => {
 
     if (match) {
       // Create tokens
-      const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || "NEXT_PUBLIC_SECERET";
-      const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET || "NEXT_PUBLIC_SECERET";
+      const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+      const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 
       const refreshToken = jwt.sign(
         { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin } },
@@ -130,14 +130,14 @@ fan_application_status: user.fan_application_status || "none",
     } else {
       return res.status(401).json({
         ok: false,
-        message: "Password mismatch.",
+        message: "Invalid username or password.",
       });
     }
   } catch (err) {
     console.error("❌ Login error:", err);
     return res.status(500).json({
       ok: false,
-      message: `Login error: ${err.message}`,
+      message: "Something went wrong. Please try again.",
     });
   }
 };

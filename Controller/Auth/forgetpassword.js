@@ -81,9 +81,10 @@ const forgetpass = async (req, res) => {
       accessToken,
     });
   } catch (err) {
+    console.error("❌ Forgot password error:", err);
     return res.status(500).json({
       ok: false,
-      message: `Recovery error: ${err.message}`,
+      message: "Something went wrong. Please try again.",
     });
   }
 };
