@@ -46,17 +46,14 @@ const forgetpass = async (req, res) => {
 
     // 4️⃣ Generate new tokens (30d, matching login's convention)
 
-    const sessionEpoch = await getSessionEpoch();
-
-
     const refreshToken = jwt.sign(
-      { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin, sessionEpoch } },
+      { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin,  } },
       process.env.REFRESH_TOKEN_SECRET,
       { expiresIn: "30d" }
     );
 
     const accessToken = jwt.sign(
-      { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin, sessionEpoch } },
+      { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin,  } },
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: "30d" }
     );
@@ -84,7 +81,6 @@ const forgetpass = async (req, res) => {
       ok: true,
       message: "Password updated successfully",
       accessToken,
-      sessionEpoch,
     });
   } catch (err) {
     console.error("❌ Forgot password error:", err);
