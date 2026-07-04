@@ -84,6 +84,7 @@ const forgetpass = async (req, res) => {
       ok: true,
       message: "Password updated successfully",
       accessToken,
+      sessionEpoch,
     });
   } catch (err) {
     console.error("❌ Forgot password error:", err);

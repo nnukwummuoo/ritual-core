@@ -249,6 +249,7 @@ app.use("/websiteanalytics", require("./routes/api/Admin/websiteAnalytics"));
 app.use("/api/admin/transactions", require("./routes/api/Admin/transactions.routes"));
 app.use("/api/admin/notifications", require("./routes/api/Admin/notificationCleanupRoutes"));
 app.use("/api/admin/force-logout-all", require("./routes/api/Admin/forceLogoutAll"));
+app.use("/session-epoch", require("./routes/api/sessionEpoch"));
 
 // New Admin Routes
 app.use("/edituser", require("./routes/api/Admin/edituser"));

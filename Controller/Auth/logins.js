@@ -88,6 +88,7 @@ const handleLogin = async (req, res) => {
         userId: user._id,
         accessToken,
         token: refreshToken,
+        sessionEpoch,  
         // Include VIP status
         isVip: user.isVip || false,
         vipStartDate: user.vipStartDate || null,
