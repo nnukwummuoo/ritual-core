@@ -1,6 +1,7 @@
 const userdb = require("../../Creators/userdb");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { getSessionEpoch } = require("../../utiils/sessionEpoch");
 
 const forgetpass = async (req, res) => {
   const { username, secretPhrase, newPassword } = req.body;
@@ -44,6 +45,22 @@ const forgetpass = async (req, res) => {
     user.password = hashedNewPassword;
 
     // 4️⃣ Generate new tokens (30d, matching login's convention)
+
+    const sessionEpoch = await getSessionEpoch();
+
+const refreshToken = jwt.sign(
+  { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin, sessionEpoch } },
+  process.env.REFRESH_TOKEN_SECRET,
+  { expiresIn: "30d" }
+);
+
+const accessToken = jwt.sign(
+  { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin, sessionEpoch } },
+  process.env.ACCESS_TOKEN_SECRET,
+  { expiresIn: "30d" }
+);
+
+
     const refreshToken = jwt.sign(
       { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin } },
       process.env.REFRESH_TOKEN_SECRET,

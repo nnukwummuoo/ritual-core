@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { getSessionEpoch } = require("../../utiils/sessionEpoch");
 const userdb = require("../../Creators/userdb");
 require("dotenv").config();
 const handleLogin = async (req, res) => {
@@ -45,6 +46,20 @@ const handleLogin = async (req, res) => {
       // Create tokens
       const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
       const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
+
+      const sessionEpoch = await getSessionEpoch();
+
+const refreshToken = jwt.sign(
+  { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin, sessionEpoch } },
+  process.env.REFRESH_TOKEN_SECRET,
+  { expiresIn: "30d" }
+);
+
+const accessToken = jwt.sign(
+  { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin, sessionEpoch } },
+  process.env.ACCESS_TOKEN_SECRET,
+  { expiresIn: "30d" }
+);
 
       const refreshToken = jwt.sign(
         { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin } },
