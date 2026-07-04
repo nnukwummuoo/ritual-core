@@ -12,6 +12,8 @@ const forgetpass = async (req, res) => {
     });
   }
 
+    const normalizedUsername = username.toLowerCase().trim();
+
   if (!Array.isArray(secretPhrase) || secretPhrase.length !== 12) {
     return res.status(400).json({
       ok: false,
@@ -21,7 +23,7 @@ const forgetpass = async (req, res) => {
 
   try {
     // 1️⃣ Find user
-    const user = await userdb.findOne({ username }).exec();
+    const user = await userdb.findOne({ username: normalizedUsername }).exec();
     if (!user) {
       return res.status(404).json({ ok: false, message: "User not found" });
     }
