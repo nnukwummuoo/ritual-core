@@ -49,26 +49,14 @@ const handleLogin = async (req, res) => {
 
       const sessionEpoch = await getSessionEpoch();
 
-const refreshToken = jwt.sign(
-  { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin, sessionEpoch } },
-  process.env.REFRESH_TOKEN_SECRET,
-  { expiresIn: "30d" }
-);
-
-const accessToken = jwt.sign(
-  { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin, sessionEpoch } },
-  process.env.ACCESS_TOKEN_SECRET,
-  { expiresIn: "30d" }
-);
-
       const refreshToken = jwt.sign(
-        { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin } },
+        { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin, sessionEpoch } },
         process.env.REFRESH_TOKEN_SECRET,
         { expiresIn: "30d" }
       );
 
       const accessToken = jwt.sign(
-        { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin } },
+        { UserInfo: { username: user.username, userId: user._id.toString(), isAdmin: user.admin, sessionEpoch } },
         process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: "30d" }
       );
