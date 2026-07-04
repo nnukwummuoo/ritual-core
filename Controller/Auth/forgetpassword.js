@@ -1,7 +1,6 @@
 const userdb = require("../../Creators/userdb");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { getSessionEpoch } = require("../../utiils/sessionEpoch");
 
 const forgetpass = async (req, res) => {
   const { username, secretPhrase, newPassword } = req.body;
