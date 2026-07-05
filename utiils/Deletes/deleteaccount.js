@@ -115,12 +115,16 @@ let deletedbs = async(userid)=>{
  await creatordb.deleteOne({userid:userid}).exec()
 
 
- if(userImage){
+if(userImage){
 
-   if(userImage.photoLink){
-       await deleteImage("profile",userImage.photoLink)
-    }
-   await completedb.deleteOne({useraccountId:userid}).exec()
+  if(userImage.photoLink){
+      try{
+         await deleteImage("profile",userImage.photoLink)
+      }catch{
+         console.log("failed deleting profile photo")
+      }
+   }
+  await completedb.deleteOne({useraccountId:userid}).exec()
 }
  await userdb.deleteOne({_id:userid}).exec()
 }
