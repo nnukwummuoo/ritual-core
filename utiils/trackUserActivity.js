@@ -393,5 +393,6 @@ module.exports = {
   trackUserAction,
   trackWebsiteVisitor,
   updateVisitorTimeSpent,
+  trackPageView,
 };
 
