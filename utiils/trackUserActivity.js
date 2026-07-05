@@ -174,6 +174,7 @@ const trackWebsiteVisitor = async (visitorData) => {
       visitTime = new Date(),
       ipAddress = null,
       location = null,
+        path = null,
     } = visitorData;
 
     if (!visitorId) return;
@@ -235,6 +236,40 @@ const trackWebsiteVisitor = async (visitorData) => {
         }
       }
 
+      const trackPageView = async (visitorId, userid, path) => {
+  try {
+    if (!visitorId || !path) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const effectiveVisitorId = userid || visitorId;
+
+    let visitor = null;
+    if (userid) {
+      visitor = await websiteVisitor.findOne({ userid, date: today });
+    }
+    if (!visitor && effectiveVisitorId) {
+      visitor = await websiteVisitor.findOne({ visitorId: effectiveVisitorId, date: today });
+    }
+
+    if (!visitor) return; // the initial track-visitor call should already have created today's record
+
+    visitor.pageViews += 1;
+    visitor.lastVisit = new Date();
+    visitor.pagesVisited.push({ path, timestamp: new Date() });
+
+    // Cap stored history per visitor per day so the array doesn't grow unbounded
+    if (visitor.pagesVisited.length > 200) {
+      visitor.pagesVisited = visitor.pagesVisited.slice(-200);
+    }
+
+    await visitor.save();
+  } catch (error) {
+    console.error("Error tracking page view:", error);
+  }
+};
+
       // Prepare location data
       const locationData = location ? {
         country: location.country || 'Unknown',
@@ -262,6 +297,7 @@ const trackWebsiteVisitor = async (visitorData) => {
         lastVisit: visitTime,
         totalTimeSpent: 0, // Initialize to 0, will be updated by time tracking
         pageViews: 1,
+        pagesVisited: path ? [{ path, timestamp: visitTime }] : [],
         signedUp: userData.signedUp || false,
         gender: userData.gender || null,
         isAnonymous: isAnonymous && !userid, // Mark as anonymous if no user ID

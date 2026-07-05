@@ -366,6 +366,7 @@ const getWebsiteAnalytics = async (req, res) => {
         totalTimeSpent: visitor.totalTimeSpent || 0,
         totalTimeSpentHours: parseFloat(((visitor.totalTimeSpent || 0) / (1000 * 60 * 60)).toFixed(2)),
         pageViews: visitor.pageViews || 1,
+        pagesVisited: (visitor.pagesVisited || []).slice().reverse(), // most recent first
         location: locationData,
         // Store raw lastVisit for sorting
         _lastVisit: visitor.lastVisit || visitor.firstVisit || visitor.date,

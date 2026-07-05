@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { trackWebsiteVisitor, updateVisitorTimeSpent } = require('../../utiils/trackUserActivity');
+const { trackWebsiteVisitor, updateVisitorTimeSpent, trackPageView } = require('../../utiils/trackUserActivity');
 const { getIpAndLocation } = require('../../utiils/getIpAndLocation');
 
 // GET /api/track-visitor (test route to verify route is accessible)
@@ -52,6 +52,24 @@ router.post('/update-visitor-time', async (req, res) => {
   } catch (error) {
     console.error('Error updating visitor time:', error);
     return res.status(500).json({ ok: false, message: 'Failed to update visitor time', error: error.message });
+  }
+});
+
+// POST /api/track-pageview
+router.post('/track-pageview', async (req, res) => {
+  try {
+    const { visitorId, userid, path } = req.body;
+
+    if (!visitorId || !path) {
+      return res.status(400).json({ ok: false, message: 'Visitor ID and path are required' });
+    }
+
+    await trackPageView(visitorId, userid || null, path);
+
+    return res.status(200).json({ ok: true, message: 'Page view tracked successfully' });
+  } catch (error) {
+    console.error('❌ [API] Error tracking page view:', error);
+    return res.status(500).json({ ok: false, message: 'Failed to track page view' });
   }
 });
 

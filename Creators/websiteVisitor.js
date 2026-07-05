@@ -61,6 +61,15 @@ const websiteVisitorSchema = new Schema(
       type: Number,
       default: 1,
     },
+    pagesVisited: {
+  type: [
+    {
+      path: { type: String, required: true },
+      timestamp: { type: Date, required: true },
+    }
+  ],
+  default: [],
+},
     // Whether visitor signed up (for logged-in users)
     signedUp: {
       type: Boolean,
