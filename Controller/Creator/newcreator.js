@@ -9,6 +9,13 @@ const createCreator = async (req, res) => {
   const name = data.name;
   const age = data.age;
   const location = data.location;
+  const state = data.state || "";
+let tours = [];
+try {
+  tours = data.tours ? JSON.parse(data.tours) : [];
+} catch {
+  tours = [];
+}
   const price = data.price;
   const duration = data.duration;
   const description = data.description;
@@ -110,6 +117,8 @@ const createCreator = async (req, res) => {
       name,
       age,
       location,
+      state,
+      tours,
       price,
       duration,
       description,

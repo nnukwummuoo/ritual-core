@@ -42,6 +42,22 @@ const markertdata = new Schema(
       required: false,
     },
 
+    state: {
+  type: String,
+  required: false,
+},
+tours: {
+  type: [
+    {
+      state: { type: String, required: true },
+      countryCode: { type: String, required: true },
+      startDate: { type: Date, required: true },
+      endDate: { type: Date, required: true },
+    }
+  ],
+  default: [],
+},
+
     price: {
       type: String,
       required: false,

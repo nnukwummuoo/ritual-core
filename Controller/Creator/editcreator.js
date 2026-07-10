@@ -18,6 +18,15 @@ const editCreator = async (req, res) => {
   let hostid = data.hostid;
   let age = data.age;
   let location = data.location;
+  let state = data.state;
+let tours = data.tours;
+if (typeof tours === "string") {
+  try {
+    tours = JSON.parse(tours);
+  } catch {
+    tours = undefined;
+  }
+}
   let price = data.price;
   let duration = data.duration;
   let description = data.description;
@@ -135,6 +144,8 @@ const editCreator = async (req, res) => {
   try {
     const age1 = currentuser.age;
     const location1 = currentuser.location;
+    const state1 = currentuser.state;
+    const tours1 = currentuser.tours;
     const price1 = currentuser.price;
     const duration1 = currentuser.duration;
     const description1 = currentuser.description;
@@ -148,9 +159,15 @@ const editCreator = async (req, res) => {
       age = age1;
     }
 
-    if (!location1) {
+    if (!location) {
       location = location1;
     }
+    if (state === undefined) {
+  state = state1;
+}
+if (tours === undefined) {
+  tours = tours1;
+}
     if (!price) {
       price = price1;
     }
@@ -179,6 +196,9 @@ const editCreator = async (req, res) => {
     currentuser.name = name || currentuser.name; // Update name if provided
     currentuser.age = age;
     currentuser.location = location;
+    currentuser.location = location;
+currentuser.state = state;
+currentuser.tours = tours;
     currentuser.price = price;
     currentuser.duration = duration;
     currentuser.description = description;
