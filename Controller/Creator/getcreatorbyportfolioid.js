@@ -111,6 +111,8 @@ currentuser = await creators.findOne({
       username: modState.username, // Include username from user data
       age: currentuser.age,
       location: currentuser.location,
+       state: currentuser.state || "",
+  tours: currentuser.tours || [],
       price: currentuser.price,
       duration: currentuser.duration,
       description: currentuser.description,
