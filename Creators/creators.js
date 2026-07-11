@@ -57,6 +57,10 @@ tours: {
   ],
   default: [],
 },
+city: {
+  type: String,
+  required: false,
+},
 
     price: {
       type: String,

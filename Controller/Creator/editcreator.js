@@ -19,6 +19,7 @@ const editCreator = async (req, res) => {
   let age = data.age;
   let location = data.location;
   let state = data.state;
+  let city = data.city;
 let tours = data.tours;
 if (typeof tours === "string") {
   try {
@@ -145,6 +146,7 @@ if (typeof tours === "string") {
     const age1 = currentuser.age;
     const location1 = currentuser.location;
     const state1 = currentuser.state;
+    const city1 = currentuser.city;
     const tours1 = currentuser.tours;
     const price1 = currentuser.price;
     const duration1 = currentuser.duration;
@@ -164,6 +166,9 @@ if (typeof tours === "string") {
     }
     if (state === undefined) {
   state = state1;
+}
+if (city === undefined) {
+  city = city1;
 }
 if (tours === undefined) {
   tours = tours1;
@@ -198,6 +203,7 @@ if (tours === undefined) {
     currentuser.location = location;
     currentuser.location = location;
 currentuser.state = state;
+currentuser.city = city;
 currentuser.tours = tours;
     currentuser.price = price;
     currentuser.duration = duration;

@@ -112,6 +112,7 @@ currentuser = await creators.findOne({
       age: currentuser.age,
       location: currentuser.location,
        state: currentuser.state || "",
+       city: currentuser.city || "",
   tours: currentuser.tours || [],
       price: currentuser.price,
       duration: currentuser.duration,

@@ -10,6 +10,7 @@ const createCreator = async (req, res) => {
   const age = data.age;
   const location = data.location;
   const state = data.state || "";
+  const city = data.city || "";
 let tours = [];
 try {
   tours = data.tours ? JSON.parse(data.tours) : [];
@@ -118,6 +119,7 @@ try {
       age,
       location,
       state,
+      city,
       tours,
       price,
       duration,
