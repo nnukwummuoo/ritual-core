@@ -61,7 +61,7 @@ const notifyBoth = async (request, hostType, wasRefunded) => {
 const backfillMissedRefunds = async () => {
   const missedOther = await requestdb.find({
     status: "expired",
-    type: { $ne: "Fan Call" },
+    type: { $ne: "Fan call" },
     price: { $gt: 0 }
   }).exec();
 
@@ -163,21 +163,21 @@ const processEndedSessions = async () => {
 const processExpiredRequestsCore = async () => {
   const now = new Date();
 
-   // Backfill missed refunds from threshold change (Fan Call excluded — no refund applies)
+   // Backfill missed refunds from threshold change (Fan call excluded — no refund applies)
     await backfillMissedRefunds();
     await processEndedSessions();
 
-    // Fan Call: expire after 10 days from acceptance, no refund
+    // Fan call: expire after 10 days from acceptance, no refund
 const expiredFanCallRequests = await requestdb.find({
   status: "accepted",
-  type: "Fan Call",
+  type: "Fan call",
   expiresAt: { $lt: now }
 }).exec();
 
 // Other types: expire after 20 days from acceptance, refund applies
 const expiredOtherRequests = await requestdb.find({
   status: "accepted",
-  type: { $ne: "Fan Call" },
+  type: { $ne: "Fan call" },
   expiresAt: { $lt: now }
 }).exec();
 
@@ -193,7 +193,7 @@ const expiredOtherRequests = await requestdb.find({
     ...expiredPendingRequests
   ];
 
-  console.log(`Processing ${allExpiredRequests.length} expired requests (${expiredFanCallRequests.length} Fan Call 10d, ${expiredOtherRequests.length} other 20d, ${expiredPendingRequests.length} pending)`);
+  console.log(`Processing ${allExpiredRequests.length} expired requests (${expiredFanCallRequests.length} Fan call 10d, ${expiredOtherRequests.length} other 20d, ${expiredPendingRequests.length} pending)`);
 
   for (const request of allExpiredRequests) {
     try {
@@ -201,7 +201,7 @@ const expiredOtherRequests = await requestdb.find({
       await request.save();
 
       const hostType = request.type || "Fan meet";
-      const isFanCall = request.type === "Fan Call";
+      const isFanCall = request.type === "Fan call";
 
       if (!isFanCall && request.price > 0) {
         const wasRefunded = await refundUser(request, hostType);
