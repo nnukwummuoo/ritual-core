@@ -107,7 +107,7 @@ currentuser = await creators.findOne({
       photolink,
       creatorfiles: currentuser.creatorfiles, // Include full creatorfiles array
       verify: modState.creator_verified,
-      name: currentuser.name,
+      name: `${modState.firstname || ""} ${modState.lastname || ""}`.trim() || currentuser.name,
       username: modState.username, // Include username from user data
       age: currentuser.age,
       location: currentuser.location,
