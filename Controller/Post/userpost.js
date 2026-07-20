@@ -198,20 +198,20 @@ const createPost = async (req, res) => {
   const hashtags = extractHashtags(content);
 
   let mediaItems = [];
-
 if (Array.isArray(req.body?.mediaItems) && req.body.mediaItems.length > 0) {
   mediaItems = req.body.mediaItems
     .filter((m) => m && m.url && m.publicId && (m.type === "image" || m.type === "video"))
     .slice(0, 10);
+}
 
-  // ------------------------------
-  // ✅ DAILY UPLOAD LIMIT CHECK
-  // ------------------------------
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+// ------------------------------
+// ✅ DAILY UPLOAD LIMIT CHECK
+// ------------------------------
+const startOfDay = new Date();
+startOfDay.setHours(0, 0, 0, 0);
 
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+const endOfDay = new Date();
+endOfDay.setHours(23, 59, 59, 999);
 
 const todaysPosts = await postdata.find({
   userid,
@@ -237,7 +237,7 @@ if (countFilesOfType("video") + incomingVideoCount > 10) {
   return res.status(400).json({ ok: false, message: "You can only upload 10 videos per day." });
 }
 
- let postfilelink = req.body?.file_link || "";
+let postfilelink = req.body?.file_link || "";
 let postfilepublicid = req.body?.public_id || "";
 
 if (mediaItems.length > 0) {
@@ -245,8 +245,6 @@ if (mediaItems.length > 0) {
   postfilelink = mediaItems[0].url;
   postfilepublicid = mediaItems[0].publicId;
 }
-}
-
 
   try {
     // --- Video Upload & Trimming ---
