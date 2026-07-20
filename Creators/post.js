@@ -42,6 +42,17 @@ const markertdata = new Scheme(
       required: false,
       default: [],
     },
+    mediaItems: {
+  type: [
+    {
+      url: { type: String, required: true },
+      publicId: { type: String, required: true },
+      type: { type: String, enum: ["image", "video"], required: true },
+    }
+  ],
+  required: false,
+  default: [],
+},
   },
   { timestamps: true }
 );

@@ -206,21 +206,43 @@ const createPost = async (req, res) => {
   const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
 
-  const todayCount = await postdata.countDocuments({
-    userid,
-    posttype,
-    posttime: { $gte: startOfDay.getTime().toString(), $lte: endOfDay.getTime().toString() },
-  });
+const todaysPosts = await postdata.find({
+  userid,
+  posttime: { $gte: startOfDay.getTime().toString(), $lte: endOfDay.getTime().toString() },
+}).lean();
 
-  if (posttype === "image" && todayCount >= 10) {
-    return res.status(400).json({ ok: false, message: "You can only upload 10 images per day." });
-  }
-  if (posttype === "video" && todayCount >= 5) {
-    return res.status(400).json({ ok: false, message: "You can only upload 5 videos per day." });
-  }
+const countFilesOfType = (t) =>
+  todaysPosts.reduce((sum, p) => {
+    if (Array.isArray(p.mediaItems) && p.mediaItems.length > 0) {
+      return sum + p.mediaItems.filter((m) => m.type === t).length;
+    }
+    if (p.posttype === t && p.postfilelink) return sum + 1;
+    return sum;
+  }, 0);
 
-  let postfilelink = req.body?.file_link || "";
-  let postfilepublicid = req.body?.public_id || "";
+const incomingImageCount = mediaItems.length > 0 ? mediaItems.filter((m) => m.type === "image").length : (posttype === "image" ? 1 : 0);
+const incomingVideoCount = mediaItems.length > 0 ? mediaItems.filter((m) => m.type === "video").length : (posttype === "video" ? 1 : 0);
+
+if (countFilesOfType("image") + incomingImageCount > 10) {
+  return res.status(400).json({ ok: false, message: "You can only upload 10 images per day." });
+}
+if (countFilesOfType("video") + incomingVideoCount > 5) {
+  return res.status(400).json({ ok: false, message: "You can only upload 5 videos per day." });
+}
+
+ let postfilelink = req.body?.file_link || "";
+let postfilepublicid = req.body?.public_id || "";
+let mediaItems = [];
+
+if (Array.isArray(req.body?.mediaItems) && req.body.mediaItems.length > 0) {
+  mediaItems = req.body.mediaItems
+    .filter((m) => m && m.url && m.publicId && (m.type === "image" || m.type === "video"))
+    .slice(0, 10);
+
+  // Keep legacy single-file fields in sync with the first item for backward compatibility
+  postfilelink = mediaItems[0].url;
+  postfilepublicid = mediaItems[0].publicId;
+}
 
 
   try {
@@ -305,15 +327,16 @@ const createPost = async (req, res) => {
     }
 
     // --- Save post to DB ---
-    const newPost = {
-      userid,
-      postfilelink,
-      postfilepublicid,
-      posttime: `${Date.now()}`,
-      content,
-      posttype,
-      hashtags,
-    };
+   const newPost = {
+  userid,
+  postfilelink,
+  postfilepublicid,
+  posttime: `${Date.now()}`,
+  content,
+  posttype: mediaItems.length > 1 ? "mixed" : posttype,
+  hashtags,
+  mediaItems,
+};
 
     await postdata.create(newPost);
 
@@ -346,6 +369,7 @@ const createPost = async (req, res) => {
             posttime: currentPost.posttime,
             posttype: currentPost.posttype,
             postid: currentPost._id,
+            mediaItems: currentPost.mediaItems || [],
             like: [],
             comment: [],
             userid: userdb[j]._id,
