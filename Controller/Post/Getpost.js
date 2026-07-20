@@ -103,6 +103,7 @@ const readPost = async (req, res) => {
           posttime: 1,
           content: 1,
           posttype: 1,
+          mediaItems: 1,
           createdAt: 1,
           updatedAt: 1,
           likeCount: 1,
