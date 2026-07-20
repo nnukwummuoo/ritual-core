@@ -223,11 +223,11 @@ const countFilesOfType = (t) =>
 const incomingImageCount = mediaItems.length > 0 ? mediaItems.filter((m) => m.type === "image").length : (posttype === "image" ? 1 : 0);
 const incomingVideoCount = mediaItems.length > 0 ? mediaItems.filter((m) => m.type === "video").length : (posttype === "video" ? 1 : 0);
 
-if (countFilesOfType("image") + incomingImageCount > 10) {
-  return res.status(400).json({ ok: false, message: "You can only upload 10 images per day." });
+if (countFilesOfType("image") + incomingImageCount > 50) {
+  return res.status(400).json({ ok: false, message: "You can only upload 50 images per day." });
 }
-if (countFilesOfType("video") + incomingVideoCount > 5) {
-  return res.status(400).json({ ok: false, message: "You can only upload 5 videos per day." });
+if (countFilesOfType("video") + incomingVideoCount > 10) {
+  return res.status(400).json({ ok: false, message: "You can only upload 10 videos per day." });
 }
 
  let postfilelink = req.body?.file_link || "";
