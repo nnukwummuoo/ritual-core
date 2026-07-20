@@ -197,6 +197,13 @@ const createPost = async (req, res) => {
 
   const hashtags = extractHashtags(content);
 
+  let mediaItems = [];
+
+if (Array.isArray(req.body?.mediaItems) && req.body.mediaItems.length > 0) {
+  mediaItems = req.body.mediaItems
+    .filter((m) => m && m.url && m.publicId && (m.type === "image" || m.type === "video"))
+    .slice(0, 10);
+
   // ------------------------------
   // ✅ DAILY UPLOAD LIMIT CHECK
   // ------------------------------
@@ -232,16 +239,12 @@ if (countFilesOfType("video") + incomingVideoCount > 10) {
 
  let postfilelink = req.body?.file_link || "";
 let postfilepublicid = req.body?.public_id || "";
-let mediaItems = [];
 
-if (Array.isArray(req.body?.mediaItems) && req.body.mediaItems.length > 0) {
-  mediaItems = req.body.mediaItems
-    .filter((m) => m && m.url && m.publicId && (m.type === "image" || m.type === "video"))
-    .slice(0, 10);
-
+if (mediaItems.length > 0) {
   // Keep legacy single-file fields in sync with the first item for backward compatibility
   postfilelink = mediaItems[0].url;
   postfilepublicid = mediaItems[0].publicId;
+}
 }
 
 
