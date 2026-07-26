@@ -35,8 +35,8 @@ const sharp = require("sharp");
 
 async function compressImage(buffer) {
   const compressedBuffer = await sharp(buffer)
-    .resize({ width: 1080 })
-    .jpeg({ quality: 80 })
+    .resize({ width: 1080, withoutEnlargement: true })
+    .webp({ quality: 80 })
     .toBuffer();
 
   return compressedBuffer;

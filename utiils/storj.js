@@ -95,10 +95,10 @@ async function getBucketForUpload(folder) {
   }
 }
 
-const generateUniqueFileName = (originalName) => {
+const generateUniqueFileName = (originalName, forcedExtension) => {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 15);
-  const extension = (originalName || "image.jpg").split('.').pop();
+  const extension = forcedExtension || (originalName || "image.jpg").split('.').pop();
   return `${timestamp}-${random}.${extension}`;
 };
 
@@ -161,9 +161,10 @@ async function getBestPublicUrl(bucket, key) {
 // -----------------------------
 async function processBufferByMime(buffer, filename, mimetype) {
   if (mimetype && mimetype.startsWith("image/")) {
-    return compressImage(buffer);
+    const webpBuffer = await compressImage(buffer);
+    return { buffer: webpBuffer, mimetype: "image/webp", extension: "webp" };
   }
-  return buffer;
+  return { buffer, mimetype, extension: null };
 }
 
 // -----------------------------
@@ -180,14 +181,14 @@ async function saveFile(file, filePath, folder = STORJ_BUCKET_DEFAULT) {
 
     const buffer = fs.readFileSync(filePath);
     const originalname = path.basename(filePath);
-    const processedBuffer = await processBufferByMime(buffer, originalname, undefined);
-    const key = generateUniqueFileName(originalname);
+    const processed = await processBufferByMime(buffer, originalname, undefined);
+    const key = generateUniqueFileName(originalname, processed.extension);
 
     const params = {
       Bucket: bucket,
       Key: key,
-      Body: processedBuffer,
-      ContentType: undefined,
+      Body: processed.buffer,
+      ContentType: processed.mimetype,
     };
 
     await s3Client.putObject(params).promise();
@@ -210,14 +211,14 @@ async function uploadSingleFileToCloudinary(file, folder = STORJ_BUCKET_DEFAULT)
   if (!file) return { public_id: "", file_link: "" };
 
   try {
-    const processedBuffer = await processBufferByMime(file.buffer, file.originalname, file.mimetype);
-    const key = generateUniqueFileName(file.originalname);
+    const processed = await processBufferByMime(file.buffer, file.originalname, file.mimetype);
+    const key = generateUniqueFileName(file.originalname, processed.extension);
 
     const params = {
       Bucket: bucket,
       Key: key,
-      Body: processedBuffer,
-      ContentType: file.mimetype,
+      Body: processed.buffer,
+      ContentType: processed.mimetype,
     };
 
     await s3Client.putObject(params).promise();
@@ -246,21 +247,21 @@ async function uploadManyFilesToCloudinary(files, folder = STORJ_BUCKET_DEFAULT)
           return { public_id: "", file_link: "", filename: file.originalname || "" };
         }
 
-        let processedBuffer;
+        let processed;
         try {
-          processedBuffer = await processBufferByMime(buffer, file.originalname, file.mimetype);
+          processed = await processBufferByMime(buffer, file.originalname, file.mimetype);
         } catch (processErr) {
           console.warn("[uploadManyFilesToCloudinary] processBufferByMime failed, using original buffer:", processErr?.message);
-          processedBuffer = buffer;
+          processed = { buffer, mimetype: file.mimetype, extension: null };
         }
 
-        const key = generateUniqueFileName(file.originalname || "image.jpg");
+        const key = generateUniqueFileName(file.originalname || "image.jpg", processed.extension);
 
         const params = {
           Bucket: bucket,
           Key: key,
-          Body: processedBuffer,
-          ContentType: file.mimetype,
+          Body: processed.buffer,
+          ContentType: processed.mimetype,
         };
 
         await s3Client.putObject(params).promise();
