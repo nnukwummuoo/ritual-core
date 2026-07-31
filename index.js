@@ -4,7 +4,7 @@ dotenv.config();
 const validateEnv = require("./config/validateEnv");
 validateEnv();
 
-const { loginLimiter, forgotPasswordLimiter } = require("./Middleware/authRateLimit");
+const { loginLimiter, forgotPasswordLimiter, regeneratePhraseLimiter } = require("./Middleware/authRateLimit");
 
 const express = require("express");
 const http = require("http");
@@ -306,6 +306,10 @@ app.use("/api", require("./routes/version")); // Version management
 console.log("✅ Registering /api/video route");
 app.use("/api/video", require("./routes/api/video/Stream"));
 app.use("/api/upload-video", require("./routes/api/videoUpload"));
+
+//regeneratesecretphrase Routes
+app.use("/changepassword", require("./routes/Auth/changepassword"));
+app.use("/regeneratesecretphrase", regeneratePhraseLimiter, require("./routes/Auth/regeneratesecretphrase"));
 
 
 

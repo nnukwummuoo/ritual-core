@@ -22,4 +22,15 @@ const forgotPasswordLimiter = rateLimit({
   },
 });
 
-module.exports = { loginLimiter, forgotPasswordLimiter };
+const regeneratePhraseLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 attempts per IP per hour — this is a sensitive, security-critical action
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    ok: false,
+    message: "Too many attempts. Please try again later.",
+  },
+});
+
+module.exports = { loginLimiter, forgotPasswordLimiter, regeneratePhraseLimiter };
