@@ -20,6 +20,12 @@ const RPC_URLS = [
 
 const WALLET_ADDRESS = process.env.WALLET_ADDRESS;
 const USDT_CONTRACT = "0x55d398326f99059fF775485246999027B3197955";
+const USDC_CONTRACT = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580"; // USDC (BEP20)
+
+const ACCEPTED_TOKENS = {
+  [USDT_CONTRACT.toLowerCase()]: "USDT",
+  [USDC_CONTRACT.toLowerCase()]: "USDC",
+};
 // ==================================================
 
 // Setup blockchain connection
@@ -159,13 +165,16 @@ const verifyTransactionHash = async (txHash, expectedAmount = null) => {
     console.log("🔎 [LOGS] Parsing transaction logs...");
     console.log(`🔎 [LOGS] Target Wallet: ${WALLET_ADDRESS?.toLowerCase()}`);
 
+    let matchedTokenSymbol = null;
+
     if (rpcReceipt.logs && rpcReceipt.logs.length > 0) {
       console.log(`📝 [LOGS] Found ${rpcReceipt.logs.length} logs`);
       
       for (const log of rpcReceipt.logs) {
-        // Check if log is from USDT contract
-        if (log.address.toLowerCase() === USDT_CONTRACT.toLowerCase()) {
-          console.log("⚠️ [LOGS] Found USDT contract log");
+        // Check if log is from an accepted stablecoin contract (USDT or USDC)
+        const tokenSymbol = ACCEPTED_TOKENS[log.address.toLowerCase()];
+        if (tokenSymbol) {
+          console.log(`⚠️ [LOGS] Found ${tokenSymbol} contract log`);
           
           try {
             // Parse Transfer event
@@ -190,13 +199,15 @@ const verifyTransactionHash = async (txHash, expectedAmount = null) => {
                 // Parse amount from data
                 const valueHex = log.data;
                 const valueBigInt = BigInt(valueHex);
-                usdtAmount = Number(valueBigInt) / 1e18; // USDT has 18 decimals
+                // USDT (BEP20) uses 18 decimals; USDC (BEP20) uses 18 decimals too — same as USDT on BSC
+                usdtAmount = Number(valueBigInt) / 1e18;
                 
                 // Extract from address
                 fromAddress = ethers.getAddress("0x" + fromTopic.slice(26));
                 foundMyTransfer = true;
+                matchedTokenSymbol = tokenSymbol;
                 
-                console.log(`✅ [LOGS] Found USDT transfer: ${usdtAmount} USDT from ${fromAddress}`);
+                console.log(`✅ [LOGS] Found ${tokenSymbol} transfer: ${usdtAmount} ${tokenSymbol} from ${fromAddress}`);
                 break;
               }
             }
@@ -251,14 +262,15 @@ const verifyTransactionHash = async (txHash, expectedAmount = null) => {
       console.warn("⚠️ Could not get block timestamp:", blockError.message);
     }
 
-    return {
+return {
       valid: true,
       amount: usdtAmount,
       fromAddress: fromAddress,
       toAddress: WALLET_ADDRESS,
       txHash: txHash,
       blockNumber: rpcReceipt.blockNumber,
-      timestamp: timestamp
+      timestamp: timestamp,
+      tokenSymbol: matchedTokenSymbol
     };
 
   } catch (error) {
@@ -422,7 +434,8 @@ exports.verifyTransactionHash = async (req, res) => {
       txHash: verification.txHash,
       fromAddress: verification.fromAddress,
       confirmedAt: new Date(),
-      verifiedVia: "RPC_DIRECT"
+      verifiedVia: "RPC_DIRECT",
+      tokenUsed: verification.tokenSymbol
     };
     await transaction.save();
 
