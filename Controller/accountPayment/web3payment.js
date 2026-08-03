@@ -274,10 +274,14 @@ const verifyTransactionHash = async (txHash, expectedAmount = null) => {
  */
 exports.createWeb3Payment = async (req, res) => {
   try {
-    const { amount, userId, order_description } = req.body;
+    const { amount, userId, order_description, fromAddress } = req.body;
 
     if (!amount || !userId) {
       return res.status(400).json({ message: "Missing required fields: amount, userId" });
+    }
+
+    if (!fromAddress || !/^0x[a-fA-F0-9]{40}$/.test(fromAddress)) {
+      return res.status(400).json({ message: "A valid sending wallet address is required." });
     }
 
     if (!WALLET_ADDRESS) {
@@ -300,7 +304,8 @@ exports.createWeb3Payment = async (req, res) => {
         contractAddress: USDT_CONTRACT,
         network: "BSC",
         walletAddress: WALLET_ADDRESS,
-        paymentMethod: "web3"
+        paymentMethod: "web3",
+        expectedFromAddress: fromAddress.toLowerCase()
       }
     });
 
@@ -381,6 +386,16 @@ exports.verifyTransactionHash = async (req, res) => {
 
     // EXECUTE VERIFICATION
     const verification = await verifyTransactionHash(txHash, transaction.amount);
+
+    if (verification.valid) {
+      const expectedFrom = transaction.txData?.expectedFromAddress;
+      if (expectedFrom && verification.fromAddress?.toLowerCase() !== expectedFrom.toLowerCase()) {
+        return res.status(400).json({
+          message: "This transaction was not sent from the wallet address registered for this order.",
+          status: "sender_mismatch",
+        });
+      }
+    }
 
     if (!verification.valid) {
       // Check if it's a duplicate transaction error
