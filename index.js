@@ -1383,6 +1383,10 @@ mongoose.connection.once("open", () => {
     });
   });
 
+  const { startExpiredPaymentsCron, startPruneDeadTransactionsCron } = require('./scripts/processExpiredWeb3Payments');
+startExpiredPaymentsCron();
+startPruneDeadTransactionsCron();
+
   // Video call billing event
   io.on('connection', (socket) => {
     socket.on('fan_call_billing', async (data) => {

@@ -550,6 +550,40 @@ exports.processExpiredPayments = async () => {
 };
 
 /**
+ * Permanently delete old, dead payment orders — never touches confirmed/finished payments.
+ * "Dead" = an order that never resulted in a real, verified payment.
+ */
+exports.pruneDeadTransactions = async () => {
+  const RETENTION_DAYS = 90;
+  const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000);
+
+  const DEAD_STATUSES = ["waiting", "cancelled", "expired", "failed"];
+
+  try {
+    const query = {
+      status: { $in: DEAD_STATUSES },
+      createdAt: { $lt: cutoff },
+    };
+
+    const count = await PaymentTransaction.countDocuments(query);
+
+    if (count === 0) {
+      console.log("🧹 [PRUNE] No dead transactions older than 90 days to remove.");
+      return { deleted: 0 };
+    }
+
+    const result = await PaymentTransaction.deleteMany(query);
+
+    console.log(`🧹 [PRUNE] Removed ${result.deletedCount} dead payment orders older than ${RETENTION_DAYS} days (statuses: ${DEAD_STATUSES.join(", ")}). Confirmed/finished payments were never touched.`);
+
+    return { deleted: result.deletedCount };
+  } catch (error) {
+    console.error("❌ [PRUNE] Error pruning dead transactions:", error);
+    throw error;
+  }
+};
+
+/**
  * @desc Manual trigger for processing expired payments
  */
 exports.manualProcessExpired = async (req, res) => {

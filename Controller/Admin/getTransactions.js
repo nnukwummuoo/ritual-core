@@ -28,7 +28,9 @@ exports.getTransactions = async (req, res) => {
       query.$or = [
         { orderId: { $regex: search, $options: 'i' } },
         { userId: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { description: { $regex: search, $options: 'i' } },
+        { 'txData.fromAddress': { $regex: search, $options: 'i' } },
+        { 'txData.expectedFromAddress': { $regex: search, $options: 'i' } }
       ];
     }
 
