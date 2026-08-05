@@ -4,11 +4,11 @@ const cron = require('node-cron');
 const CreatorRitual = require('../models/CreatorRitual');
 
 /**
- * Marks creator rituals as expired when their 24h window has passed.
- * Runs every hour.
- * 
+ * Marks creator rituals as expired once their expiresAt timestamp has passed
+ * (currently 30 days from upload, set in creatorRitualController.js). Runs every hour.
+ *
  * Effect:
- *  - isExpired: false  →  appears on /anya feed (live for 24h)
+ *  - isExpired: false  →  appears on the ritual feed
  *  - isExpired: true   →  disappears from feed, appears ONLY on
  *                         the creator's profile archived tab
  */

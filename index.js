@@ -131,9 +131,7 @@ app.use('/uploads', express.static('uploads'));
 
 connect();
 
-// Initialize AI Story Generation Scheduler
-const { initializeScheduledTasks } = require('./jobs/storyScheduler');
-initializeScheduledTasks();
+
 
 const IDS = {};
 
@@ -300,7 +298,6 @@ app.use("/api/referral", require("./routes/api/referral/getReferralInfo"));
 app.use("/api/referral/admin/analytics", require("./routes/api/referral/getAdminReferralAnalytics"));
 app.use("/api/admin", require("./routes/admin/deviceStatsRoutes"));
 app.use("/api/maintenance", require("./routes/api/maintenance"));
-app.use("/api/ai-story", require("./routes/aiStoryRoutes"));
 app.use("/api/creator-rituals", require("./routes/api/creatorRitualRoutes"));
 app.use("/api", require("./routes/version")); // Version management
 console.log("✅ Registering /api/video route");
@@ -1367,9 +1364,9 @@ mongoose.connection.once("open", () => {
   const scheduledExpiredRequests = require('./scripts/scheduledExpiredRequests');
   scheduledExpiredRequests.start();
 
-  // Start story generation and lifecycle management cron jobs
-  const { initializeScheduledTasks } = require('./jobs/storyScheduler');
-  initializeScheduledTasks();
+  // Start RitualExpiry management cron jobs
+  const { scheduleRitualExpiry } = require('./jobs/ritualExpiryScheduler');
+  scheduleRitualExpiry();
 
 
   server.listen(PORT, '0.0.0.0', () => {

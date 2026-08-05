@@ -1,7 +1,7 @@
-# Anya Analytics System
+# ritual Analytics System
 
 ## Overview
-A comprehensive analytics system for tracking and visualizing AI-generated story (Anya Rituals) performance metrics in the admin dashboard.
+A comprehensive analytics system for tracking and visualizing AI-generated story (ritual Rituals) performance metrics in the admin dashboard.
 
 ## Features Implemented
 
@@ -27,7 +27,7 @@ A comprehensive analytics system for tracking and visualizing AI-generated story
 
 ### Frontend (Admin Dashboard)
 
-#### 1. Anya Analytics Page (`src/app/mmeko/admin/anya-analytics/page.tsx`)
+#### 1. ritual Analytics Page (`src/app/mmeko/admin/ritual-analytics/page.tsx`)
 
 **Summary Cards** (4 cards):
 - Total Stories
@@ -70,7 +70,7 @@ A comprehensive analytics system for tracking and visualizing AI-generated story
 - Professional dark theme
 
 #### 2. Admin Dashboard Integration (`src/app/mmeko/admin/page.tsx`)
-- Added "Anya Analytics" navigation item
+- Added "ritual Analytics" navigation item
 - Icon: IoSparkles (sparkles icon)
 - Positioned after "Referral Analysis"
 - Integrated into the same sidebar navigation system
@@ -92,7 +92,7 @@ A comprehensive analytics system for tracking and visualizing AI-generated story
 
 ### For Administrators:
 1. Navigate to Admin Dashboard (`/mmeko/admin`)
-2. Click on "Anya Analytics" in the sidebar
+2. Click on "ritual Analytics" in the sidebar
 3. Select desired time period from dropdown
 4. View comprehensive metrics and charts
 5. Switch between top stories tabs (Likes/Views/Comments)
@@ -143,7 +143,7 @@ Potential additions:
 - ✅ Modified: `routes/aiStoryRoutes.js`
 
 **Frontend**:
-- ✅ Created: `src/app/mmeko/admin/anya-analytics/page.tsx`
+- ✅ Created: `src/app/mmeko/admin/ritual-analytics/page.tsx`
 - ✅ Modified: `src/app/mmeko/admin/page.tsx`
 
 ## API Response Example
@@ -180,7 +180,7 @@ Potential additions:
 
 ## Success Criteria ✅
 
-✅ Track daily visits to Anya page  
+✅ Track daily visits to ritual page  
 ✅ 7-day historical data  
 ✅ Charts showing visitor trends  
 ✅ Like count tracking  
@@ -195,4 +195,4 @@ Potential additions:
 
 ## Conclusion
 
-The Anya Analytics system provides comprehensive insights into AI story performance, helping administrators understand user engagement, identify popular content, and make data-driven decisions for content strategy.
+The ritual Analytics system provides comprehensive insights into AI story performance, helping administrators understand user engagement, identify popular content, and make data-driven decisions for content strategy.

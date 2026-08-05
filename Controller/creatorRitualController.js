@@ -2,17 +2,8 @@ const CreatorRitual = require('../models/CreatorRitual');
 const { uploadToStorj } = require('../utiils/storjUpload');
 const admindb = require("../Creators/admindb");
 const { pushActivityNotification } = require('../utiils/sendPushnot');
-// ─── Helper: mark expired rituals ────────────────────────────────────────────
-async function markExpiredRituals() {
-    try {
-        await CreatorRitual.updateMany(
-            { expiresAt: { $lt: new Date() }, isExpired: false },
-            { $set: { isExpired: true } }
-        );
-    } catch (err) {
-        console.error('[CreatorRitual] markExpiredRituals error:', err.message);
-    }
-}
+// ─── Helper: mark expired rituals (shared with jobs/ritualExpiryScheduler.js) ──
+const { markExpiredRituals } = require('../jobs/ritualExpiryScheduler');
 
 // ─── POST /api/creator-rituals/upload ────────────────────────────────────────
 // Accepts: multipart/form-data

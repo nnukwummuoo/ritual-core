@@ -24,7 +24,7 @@ model: "krea-1",
 **Problem:** Old stories in database only have 1 panel.
 
 **Solution:**
-1. Click "Delete All" button on `/anya` page
+1. Click "Delete All" button on `/ritual` page
 2. Click "Generate Stories" button
 3. Wait 15-20 seconds
 4. Refresh the page
