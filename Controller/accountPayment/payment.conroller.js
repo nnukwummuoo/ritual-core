@@ -1,5 +1,43 @@
 const PaymentAccount = require("../../Creators/paymentAccount");
 const mongoose = require("mongoose");
+const { ethers } = require("ethers");
+
+/**
+ * Verifies that the person submitting this request actually controls the
+ * wallet address they claim to — by checking a signed message against it.
+ * A correct signature is cryptographic proof of control; nothing else here
+ * (format checks, checksum checks) can provide that.
+ */
+exports.verifyWalletSignature = async (req, res) => {
+  try {
+    const { address, message, signature } = req.body;
+
+    if (!address || !message || !signature) {
+      return res.status(400).json({ ok: false, message: "Missing address, message, or signature" });
+    }
+
+    if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      return res.status(400).json({ ok: false, message: "Invalid address format" });
+    }
+
+    // Recover the address that actually produced this signature
+    let recoveredAddress;
+    try {
+      recoveredAddress = ethers.verifyMessage(message, signature);
+    } catch (err) {
+      return res.status(400).json({ ok: false, message: "Could not verify signature" });
+    }
+
+    if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
+      return res.status(401).json({ ok: false, message: "Signature does not match the provided address" });
+    }
+
+    return res.status(200).json({ ok: true, verifiedAddress: recoveredAddress });
+  } catch (error) {
+    console.error("❌ verifyWalletSignature error:", error);
+    return res.status(500).json({ ok: false, message: "Something went wrong verifying your wallet" });
+  }
+};
 
 exports.savePaymentAccount = async (req, res) => {
   try {
