@@ -1,6 +1,7 @@
 const PaymentAccount = require("../../Creators/paymentAccount");
 const mongoose = require("mongoose");
 const { ethers } = require("ethers");
+const VerifiedBuyerWallet = require("../../Creators/verifiedBuyerWallet");
 
 /**
  * Verifies that the person submitting this request actually controls the
@@ -36,6 +37,70 @@ exports.verifyWalletSignature = async (req, res) => {
   } catch (error) {
     console.error("❌ verifyWalletSignature error:", error);
     return res.status(500).json({ ok: false, message: "Something went wrong verifying your wallet" });
+  }
+};
+
+/**
+ * Verifies + persists the wallet a user will be sending FROM when buying Gold.
+ * Same signature-verification core as the payout flow, different purpose and
+ * a different, lightweight collection — this one just remembers one address
+ * per user so they don't have to reconnect/re-sign on every purchase.
+ */
+exports.saveVerifiedBuyerWallet = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { address, message, signature } = req.body;
+
+    if (!address || !message || !signature) {
+      return res.status(400).json({ ok: false, message: "Missing address, message, or signature" });
+    }
+    if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      return res.status(400).json({ ok: false, message: "Invalid address format" });
+    }
+
+    let recoveredAddress;
+    try {
+      recoveredAddress = ethers.verifyMessage(message, signature);
+    } catch {
+      return res.status(400).json({ ok: false, message: "Could not verify signature" });
+    }
+
+    if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
+      return res.status(401).json({ ok: false, message: "Signature does not match the provided address" });
+    }
+
+    await VerifiedBuyerWallet.findOneAndUpdate(
+      { userId },
+      { walletAddress: recoveredAddress, verifiedAt: new Date() },
+      { upsert: true, new: true }
+    );
+
+    return res.status(200).json({ ok: true, walletAddress: recoveredAddress });
+  } catch (error) {
+    console.error("❌ saveVerifiedBuyerWallet error:", error);
+    return res.status(500).json({ ok: false, message: "Something went wrong" });
+  }
+};
+
+exports.getVerifiedBuyerWallet = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const record = await VerifiedBuyerWallet.findOne({ userId });
+    return res.status(200).json({ ok: true, walletAddress: record?.walletAddress || null });
+  } catch (error) {
+    console.error("❌ getVerifiedBuyerWallet error:", error);
+    return res.status(500).json({ ok: false, message: "Something went wrong" });
+  }
+};
+
+exports.deleteVerifiedBuyerWallet = async (req, res) => {
+  try {
+    const userId = req.userId;
+    await VerifiedBuyerWallet.deleteOne({ userId });
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("❌ deleteVerifiedBuyerWallet error:", error);
+    return res.status(500).json({ ok: false, message: "Something went wrong" });
   }
 };
 
