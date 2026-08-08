@@ -116,6 +116,11 @@ exports.savePaymentAccount = async (req, res) => {
       });
     }
 
+    const VALID_CURRENCIES = ["USDT (BEP-20)", "USDC (BEP-20)"];
+    if (!currency || !VALID_CURRENCIES.includes(currency)) {
+      return res.status(400).json({ message: "Please select a stable coin (USDT or USDC)." });
+    }
+
     // Validate method
     if (method !== "crypto") {
       return res.status(400).json({ message: "Only cryptocurrency accounts are supported" });
@@ -146,7 +151,7 @@ exports.savePaymentAccount = async (req, res) => {
       email,
       phone,
       country,
-      currency: currency || "USD", // Default to USD if not provided
+      currency,
       cryptoType: cryptoType || "USDT_BEP20", // Default to USDT_BEP20 if not provided
       walletAddress,
     };
