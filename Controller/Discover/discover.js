@@ -3,6 +3,7 @@ const userdb = require("../../Creators/userdb");
 const creatordb = require("../../Creators/creators");
 const postdb = require("../../Creators/post");
 const photodb = require("../../Creators/usercomplete");
+const GlobalSettings = require("../../Creators/GlobalSettings");
 
 /**
  * @desc Get users with most fans (followers)
@@ -83,15 +84,29 @@ exports.getCreatorsWithMostViews = async (req, res) => {
       .find({})
       .lean();
 
-    // Sort by views array length (most views first)
-    creators.sort((a, b) => {
-      const aViews = Array.isArray(a.views) ? a.views.length : 0;
-      const bViews = Array.isArray(b.views) ? b.views.length : 0;
-      return bViews - aViews;
-    });
+    // Respect the same admin-controlled sort preference used everywhere else
+    let settings = await GlobalSettings.findOne({ key: 'main_config' });
+    const isNewestFirst = settings ? settings.isNewestCreatorsFirst : false;
+
+    if (isNewestFirst) {
+      // Sort by createdAt descending (Newest first)
+      creators.sort((a, b) => {
+        const dateA = new Date(a.createdAt || 0);
+        const dateB = new Date(b.createdAt || 0);
+        return dateB - dateA;
+      });
+    } else {
+      // Default: Sort by views array length (most views first)
+      creators.sort((a, b) => {
+        const aViews = Array.isArray(a.views) ? a.views.length : 0;
+        const bViews = Array.isArray(b.views) ? b.views.length : 0;
+        return bViews - aViews;
+      });
+    }
 
     // Limit after sorting
     const limitedCreators = creators.slice(0, limit);
+
 
     // Get user details for each creator
     const creatorsWithViews = await Promise.all(
@@ -113,7 +128,7 @@ exports.getCreatorsWithMostViews = async (req, res) => {
 
         const viewsCount = Array.isArray(creator.views) ? creator.views.length : (creator.views || 0);
 
-        return {
+       return {
           creatorId: creator._id,
           userId: creator.userid,
           name: creator.name || `${user.firstname || ''} ${user.lastname || ''}`.trim() || user.username || 'Unknown',
@@ -124,6 +139,7 @@ exports.getCreatorsWithMostViews = async (req, res) => {
           location: creator.location || '',
           isVip: user.isVip || false,
           vipEndDate: user.vipEndDate || null,
+          createdAt: creator.createdAt || null,
         };
       })
     );
