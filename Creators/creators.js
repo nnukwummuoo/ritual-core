@@ -110,9 +110,14 @@ city: {
       type: [String],
       default: [],
     },
-    earnings: {
+     earnings: {
       type: Number,
       default: 0,
+    },
+
+    exclusiveContentEnabled: {
+      type: Boolean,
+      default: true,
     },
 
     creatorfiles: [creatorfileschema],

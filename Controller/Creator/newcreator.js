@@ -24,6 +24,9 @@ try {
   const timeava = data.timeava;
   const daysava = data.daysava;
   const hosttype = data.hosttype;
+  const exclusiveContentEnabled = data.exclusiveContentEnabled === undefined
+    ? true
+    : (data.exclusiveContentEnabled === "true" || data.exclusiveContentEnabled === true);
   const photolink = data.photolink || [];
 
   if (!userid) {
@@ -127,7 +130,8 @@ try {
       gender,
       timeava,
       daysava,
-      hosttype,
+         hosttype,
+      exclusiveContentEnabled,
     };
 
     const newCreator = await creators.create(creator);

@@ -34,7 +34,11 @@ if (typeof tours === "string") {
   let gender = data.gender;
   let timeava = data.timeava;
   let daysava = data.daysava;
-  let hosttype = data.hosttype;
+   let hosttype = data.hosttype;
+  let exclusiveContentEnabled = data.exclusiveContentEnabled;
+  if (exclusiveContentEnabled !== undefined) {
+    exclusiveContentEnabled = exclusiveContentEnabled === "true" || exclusiveContentEnabled === true;
+  }
   let name = data.name; // Add name field
   let userId = data.userId; // Add userId field
   let creator_portfolio_id = data.creator_portfolio_id; // Add creator_portfolio_id field
@@ -191,8 +195,11 @@ if (tours === undefined) {
     if (!daysava) {
       daysava = daysava1;
     }
-    if (!hosttype) {
+     if (!hosttype) {
       hosttype = hosttype1;
+    }
+    if (exclusiveContentEnabled === undefined) {
+      exclusiveContentEnabled = currentuser.exclusiveContentEnabled;
     }
     if (!creatorfiles) {
       currentuser.creatorfiles = initialCreatorFiles;
@@ -211,7 +218,8 @@ currentuser.tours = tours;
     currentuser.gender = gender;
     currentuser.timeava = timeava;
     currentuser.daysava = daysava;
-    currentuser.hosttype = hosttype;
+      currentuser.hosttype = hosttype;
+    currentuser.exclusiveContentEnabled = exclusiveContentEnabled;
 
     if (creatorfiles && creatorfiles.length > 0) {
       currentuser.creatorfiles = creatorfiles;
