@@ -122,7 +122,6 @@ currentuser = await creators.findOne({
       daysava: currentuser.daysava.join(" "),
     hosttype: currentuser.hosttype,
       exclusiveContentEnabled: currentuser.exclusiveContentEnabled,
-      followersCount: (modState.followers?.length || currentuser.followers?.length || 0),
       userid: currentuser.userid,
       add: added,
       active: modState.active,
