@@ -3,8 +3,18 @@ const { uploadSingleFileToCloudinary } = require("../../utiils/storj");
 
 const updateExclusivePost = async (req, res) => {
   try {
-    const postid = req.body.postid || req.body._id;
-    const userid = req.body.userid;
+    // The frontend sends all fields bundled as a JSON string under "data"
+    // (multipart/form-data can't nest objects directly), so it must be
+    // parsed first — reading req.body.postid etc. directly is always undefined.
+    let data;
+    try {
+      data = JSON.parse(req.body.data);
+    } catch {
+      return res.status(400).json({ ok: false, message: "Invalid request data" });
+    }
+
+    const postid = data.postid || data._id;
+    const userid = data.userid;
 
     if (!postid) {
       return res.status(400).json({ ok: false, message: "Post ID is required" });
@@ -30,19 +40,20 @@ const updateExclusivePost = async (req, res) => {
     const updateData = {};
 
     // Update content if provided
-    if (req.body.content !== undefined) {
-      updateData.content = req.body.content;
+    if (data.content !== undefined) {
+      updateData.content = data.content;
     }
 
     // Update price if provided
-    if (req.body.price !== undefined) {
-      const price = parseFloat(req.body.price);
+    if (data.price !== undefined) {
+      const price = parseFloat(data.price);
       if (isNaN(price) || price < 0) {
         return res.status(400).json({ ok: false, message: "Invalid price" });
       }
       updateData.price = price;
     }
 
+    
     // Handle file upload if new file is provided
     if (req.file) {
       const result = await uploadSingleFileToCloudinary(req.file, "post");
