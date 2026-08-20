@@ -1234,113 +1234,69 @@ io.on("connection", (socket) => {
   });
 
   // WebRTC signaling events
-  socket.on('fan_call_offer', async (data) => {
-    const { callId, offer } = data;
+ socket.on('fan_call_offer', async (data) => {
+    const { callId, offer, targetUserId } = data;
     // Received offer for call
 
     try {
-      // If it's a temporary call ID, broadcast to all users (fallback)
-      if (callId.startsWith('temp_')) {
-        // Temporary call ID, broadcasting offer
-        socket.broadcast.emit('fan_call_offer', {
-          callId: callId,
-          offer: offer
-        });
+      if (!targetUserId) {
+        console.error('❌ [WebRTC] fan_call_offer missing targetUserId — dropping (refusing to broadcast)');
         return;
       }
 
-      // Find the call to get the other participant
-      const videocalldb = require('./Creators/videoalldb');
-      const call = await videocalldb.findOne({ _id: callId }).exec();
-
-      if (call) {
-        // Get the current user ID from the socket
-        const currentUserId = socket.userId || socket.id;
-        const otherUserId = call.callerid === currentUserId ? call.clientid : call.callerid;
-        // Forwarding offer to user
-
-        // Forward offer to the other participant
-        socket.to(`user_${otherUserId}`).emit('fan_call_offer', {
-          callId: callId,
-          offer: offer
-        });
-      }
+      // Route directly to the intended recipient. No DB lookup, no
+      // broadcast fallback — targetUserId is always known to the client
+      // from the moment the call starts, regardless of whether the real
+      // callId has been confirmed by the server yet.
+      socket.to(`user_${targetUserId}`).emit('fan_call_offer', {
+        callId: callId,
+        offer: offer
+      });
     } catch (error) {
       console.error('❌ [WebRTC] Error forwarding fan call offer:', error);
     }
   });
 
   socket.on('fan_call_answer', async (data) => {
-    const { callId, answer } = data;
+    const { callId, answer, targetUserId } = data;
     // Received answer for call
 
     try {
-      // If it's a temporary call ID, broadcast to all users (fallback)
-      if (callId.startsWith('temp_')) {
-        // Temporary call ID, broadcasting answer
-        socket.broadcast.emit('fan_call_answer', {
-          callId: callId,
-          answer: answer
-        });
+      if (!targetUserId) {
+        console.error('❌ [WebRTC] fan_call_answer missing targetUserId — dropping (refusing to broadcast)');
         return;
       }
 
-      // Find the call to get the other participant
-      const videocalldb = require('./Creators/videoalldb');
-      const call = await videocalldb.findOne({ _id: callId }).exec();
-
-      if (call) {
-        // Get the current user ID from the socket
-        const currentUserId = socket.userId || socket.id;
-        const otherUserId = call.callerid === currentUserId ? call.clientid : call.callerid;
-        // Forwarding answer to user
-
-        // Forward answer to the other participant
-        socket.to(`user_${otherUserId}`).emit('fan_call_answer', {
-          callId: callId,
-          answer: answer
-        });
-      }
+      socket.to(`user_${targetUserId}`).emit('fan_call_answer', {
+        callId: callId,
+        answer: answer
+      });
     } catch (error) {
       console.error('❌ [WebRTC] Error forwarding answer:', error);
     }
   });
 
   socket.on('fan_call_ice_candidate', async (data) => {
-    const { callId, candidate } = data;
+    const { callId, candidate, targetUserId } = data;
     // Received ICE candidate for call
 
     try {
-      // If it's a temporary call ID, broadcast to all users (fallback)
-      if (callId.startsWith('temp_')) {
-        // Temporary call ID, broadcasting ICE candidate
-        socket.broadcast.emit('fan_call_ice_candidate', {
-          callId: callId,
-          candidate: candidate
-        });
+      if (!targetUserId) {
+        console.error('❌ [WebRTC] fan_call_ice_candidate missing targetUserId — dropping (refusing to broadcast)');
         return;
       }
 
-      // Find the call to get the other participant
-      const videocalldb = require('./Creators/videoalldb');
-      const call = await videocalldb.findOne({ _id: callId }).exec();
-
-      if (call) {
-        // Get the current user ID from the socket
-        const currentUserId = socket.userId || socket.id;
-        const otherUserId = call.callerid === currentUserId ? call.clientid : call.callerid;
-        // Forwarding ICE candidate to user
-
-        // Forward ICE candidate to the other participant
-        socket.to(`user_${otherUserId}`).emit('fan_call_ice_candidate', {
-          callId: callId,
-          candidate: candidate
-        });
-      }
+      socket.to(`user_${targetUserId}`).emit('fan_call_ice_candidate', {
+        callId: callId,
+        candidate: candidate
+      });
     } catch (error) {
       console.error('❌ [WebRTC] Error forwarding fan call ICE candidate:', error);
     }
   });
+     
+
+  
 });
 
 mongoose.connection.once("open", () => {
