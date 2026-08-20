@@ -369,13 +369,19 @@ io.on("connection", (socket) => {
         return;
       }
 
-      await checkuser(userid);
+     await checkuser(userid);
       await deletecallOffline(userid);
       socket.id = userid;
       socket.userId = userid; // Store user ID in socket for WebRTC signaling
       IDS.userid = userid;
       socket.join("LiveChat");
-
+      socket.join(`user_${userid}`); // Ensures this user is reachable via socket.to(`user_${userid}`)
+      // for video-call signaling (offer/answer/ICE) and other targeted
+      // events, regardless of whether they've opened a chat conversation —
+      // previously this only happened via a separate "join_user_room" emit
+      // that only fired inside the chat page, so any user who started or
+      // received a call without visiting chat first was unreachable.
+      
       // Track this socket for this user
       connectedSockets.set(userid, socket);
 
