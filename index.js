@@ -1039,14 +1039,15 @@ io.on("connection", (socket) => {
 
   socket.on('fan_call_end', async (data) => {
     try {
-      const { callId, userId, callerId, answererId } = data;
+      const { callId, userId, callerId, answererId, reason } = data;
 
       // Skip database operations for temporary call IDs
       if (callId && callId.startsWith('temp_')) {
         // Ending temporary call - emit to both caller and answerer if provided
         const endEvent = {
           callId: callId,
-          endedBy: userId
+          endedBy: userId,
+          reason: reason || null
         };
 
         // Emit to both parties using io.to() to ensure both receive it
@@ -1071,10 +1072,11 @@ io.on("connection", (socket) => {
         // Delete call record
         await videocalldb.deleteOne({ _id: callId }).exec();
 
-        // Emit call ended to both participants using io.to() for proper room targeting
+       // Emit call ended to both participants using io.to() for proper room targeting
         const endEvent = {
           callId: callId,
-          endedBy: userId
+          endedBy: userId,
+          reason: reason || null
         };
 
         // Emit to both users immediately
