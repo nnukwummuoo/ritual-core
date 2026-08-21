@@ -1351,7 +1351,7 @@ startPruneDeadTransactionsCron();
 
   // Video call billing event
   io.on('connection', (socket) => {
-    socket.on('fan_call_billing', async (data) => {
+    socket.on('fan_call_billing', async (data, ack) => {
       try {
         const { callId, callerId, currentUserId, amount, minute } = data;
         console.log('💰 [Billing] Received fan call billing event:', { callId, callerId, currentUserId, amount, minute });
@@ -1364,8 +1364,10 @@ startPruneDeadTransactionsCron();
         const call = await videocalldb.findOne({ _id: callId }).exec();
         if (!call) {
           console.log('❌ [Billing] Call not found for billing:', callId);
+          if (typeof ack === 'function') ack({ ok: false, error: 'call_not_found' });
           return;
         }
+        
 
         console.log('✅ [Billing] Call found:', { callId, callerId: call.callerid, clientId: call.clientid });
 
@@ -1378,14 +1380,17 @@ startPruneDeadTransactionsCron();
 
         if (existingBilling) {
           console.log('⚠️ [Billing] Minute already billed, skipping duplicate:', { minute, callId, currentUserId });
+          if (typeof ack === 'function') ack({ ok: false, error: 'already_billed' });
           return;
         }
 
         // Also check if the call document has a billing state to prevent race conditions
         if (call.billedMinutes && call.billedMinutes.includes(minute)) {
           console.log('⚠️ [Billing] Minute already marked as billed in call document:', { minute, callId });
+          if (typeof ack === 'function') ack({ ok: false, error: 'already_billed' });
           return;
         }
+        
 
         // The fan is the one sending the billing event (currentUserId), not necessarily the caller
         const fanId = currentUserId; // Fan is the one paying
@@ -1405,17 +1410,25 @@ startPruneDeadTransactionsCron();
 
         console.log('💰 [Billing] Fan balance check:', { fanId, fanBalance, amount, hasEnoughFunds: fanBalance >= amount });
 
-        if (fan && fanBalance >= amount) {
+       if (fan && fanBalance >= amount) {
           // Update fan's balance
           fan.balance = (fanBalance - amount).toString();
           await fan.save();
 
-          // Mark this minute as billed in the call document to prevent duplicate billing
-          if (!call.billedMinutes) {
-            call.billedMinutes = [];
+          // Atomic update instead of load-then-save: prevents the
+          // VersionError that occurs when fan_call_end concurrently
+          // deletes/modifies this same call document mid-transaction.
+          const updatedCall = await videocalldb.findOneAndUpdate(
+            { _id: callId },
+            { $addToSet: { billedMinutes: minute } },
+            { new: true }
+          ).exec();
+
+          if (!updatedCall) {
+            console.log('❌ [Billing] Call record disappeared before billing could finish:', callId);
+            if (typeof ack === 'function') ack({ ok: false, error: 'call_disappeared' });
+            return;
           }
-          call.billedMinutes.push(minute);
-          await call.save();
 
           // Add to creator's earnings
           const creator = await userdb.findOne({ _id: creator_portfolio_id }).exec();
@@ -1482,6 +1495,10 @@ startPruneDeadTransactionsCron();
               callEarnings: amount, // Show earnings from this specific call
               minute: minute
             });
+
+            if (typeof ack === 'function') ack({ ok: true });
+          } else {
+            if (typeof ack === 'function') ack({ ok: false, error: 'creator_not_found' });
           }
         } else {
           // Insufficient funds for billing
@@ -1490,9 +1507,11 @@ startPruneDeadTransactionsCron();
           io.to(`user_${fanId}`).emit('insufficient_funds', {
             message: 'Insufficient funds to continue call'
           });
+          if (typeof ack === 'function') ack({ ok: false, error: 'insufficient_funds' });
         }
       } catch (error) {
         console.error('Error in fan_call_billing:', error);
+        if (typeof ack === 'function') ack({ ok: false, error: error.message });
       }
     });
   });
