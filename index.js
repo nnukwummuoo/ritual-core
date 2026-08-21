@@ -839,7 +839,6 @@ io.on("connection", (socket) => {
   socket.on('fan_call_start', async (data) => {
     try {
       const { callerId, callerName, answererId, answererName } = data;
-      console.log('[TRACE] Backend received fan_call_start — callerId:', callerId, 'answererId:', answererId);
 
 
 
@@ -867,9 +866,9 @@ io.on("connection", (socket) => {
 
         if (creator && creator.userid) {
           actualAnswererId = creator.userid;
-          console.log('[TRACE] Resolved answererId', answererId, '(creator doc _id) -> actualAnswererId', actualAnswererId, '(real user id)');
+          // Found creator user ID
         } else {
-          console.log('[TRACE] No creator doc found for answererId', answererId, '- using it as-is');
+          // Creator not found, using original ID
         }
         
 
@@ -943,8 +942,7 @@ io.on("connection", (socket) => {
 
 
 
-      console.log('[TRACE] Emitting fan_call_incoming to room user_' + actualAnswererId, '— callerId in payload:', callerId);
-      socket.to(`user_${actualAnswererId}`).emit('fan_call_incoming', {
+     socket.to(`user_${actualAnswererId}`).emit('fan_call_incoming', {
         callId: call._id,
         callerId: callerId,
         callerName: callerName,
