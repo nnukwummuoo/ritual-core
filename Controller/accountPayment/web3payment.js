@@ -20,7 +20,7 @@ const RPC_URLS = [
 
 const WALLET_ADDRESS = process.env.WALLET_ADDRESS;
 const USDT_CONTRACT = "0x55d398326f99059fF775485246999027B3197955";
-const USDC_CONTRACT = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580"; // USDC (BEP20)
+const USDC_CONTRACT = "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"; // USDC (BEP20)
 
 const ACCEPTED_TOKENS = {
   [USDT_CONTRACT.toLowerCase()]: "USDT",
@@ -448,7 +448,8 @@ exports.verifyTransactionHash = async (req, res) => {
       status: "confirmed",
       orderId: transaction.orderId,
       amount: verification.amount,
-      goldAmount: goldAmount
+      goldAmount: goldAmount,
+      tokenSymbol: verification.tokenSymbol
     });
 
   } catch (error) {
