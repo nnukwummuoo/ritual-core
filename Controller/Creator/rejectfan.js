@@ -25,7 +25,7 @@ const rejectFan = async (req, res) => {
     // 3. Save admin notification
     await admindb.create({
       userid,
-      message: `Your fan verification was not approved. Please resubmit with clearer documents.`,
+      message: `Your fan verification was not approved. Please review your details and try again.`,
       seen: false,
     });
 
@@ -33,7 +33,7 @@ const rejectFan = async (req, res) => {
     try {
       await pushAdminNotification(
         userid,
-        `❌ Your fan verification was not approved. Please resubmit with clearer documents.`,
+        `❌ Your fan verification was not approved. Please review your details and try again.`,
         "fan_verification_rejected"
       );
     } catch (pushError) {

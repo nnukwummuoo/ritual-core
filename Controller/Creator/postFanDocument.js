@@ -64,7 +64,7 @@ const postFanDocument = async (req, res) => {
     // Notify user
     await admindb.create({
       userid,
-      message: "Your fan verification has been submitted and is under review.",
+      message: "Fan verification submitted — currently under review.",
       seen: false,
     });
 
@@ -72,7 +72,7 @@ const postFanDocument = async (req, res) => {
     try {
       await pushAdminNotification(
         userid,
-        "Your fan verification documents have been submitted. We'll review them shortly.",
+        "✅ Fan verification submitted — currently under review.",
         "fan_verification_submitted"
       );
     } catch (pushError) {

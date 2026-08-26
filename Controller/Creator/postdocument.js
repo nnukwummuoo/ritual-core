@@ -135,7 +135,7 @@ if (!results || results.length < 2 || !results[0].file_link || !results[1].file_
 
     let respond = {
       userid,
-      message: `Your application has been submitted and is now in review. You will hear from us within few hours.`,
+      message: `Your application is under review. Hang tight — you’re almost ready to start receiving fan requests!`,
       seen: false,
     };
 
@@ -145,7 +145,7 @@ if (!results || results.length < 2 || !results[0].file_link || !results[1].file_
     try {
       await pushAdminNotification(
         userid, 
-        `Your creator application has been submitted and is now in review. You will hear from us within few hours.`,
+        `Your application is under review. Hang tight — you’re almost ready to start receiving fan requests!`,
         "application_submitted"
       );
     } catch (pushError) {

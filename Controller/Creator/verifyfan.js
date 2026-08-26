@@ -30,7 +30,7 @@ console.log("✅ saved fan status:", user.fan_verified, user.fan_application_sta
     // 3. Save admin notification to DB
     await admindb.create({
       userid,
-      message: `Congratulations! Your fan verification has been approved.`,
+      message: `Your fan verification is approved — welcome to verified fan status!`,
       seen: false,
     });
 
@@ -38,7 +38,7 @@ console.log("✅ saved fan status:", user.fan_verified, user.fan_application_sta
     try {
       await pushAdminNotification(
         userid,
-        `✅ Your fan verification has been approved! You now have verified fan status.`,
+        `🎉 Your fan verification is approved — welcome to verified fan status!`,
         "fan_verification_approved"
       );
     } catch (pushError) {

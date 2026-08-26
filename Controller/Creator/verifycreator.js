@@ -44,7 +44,7 @@ const createCreator = async (req, res) => {
     try {
       await pushAdminNotification(
         userid, 
-        `🎉 Congratulations! Your creator application has been approved. You can now start creating your portfolio!`,
+        `🎉 Congratulations! Your creator application has been approved. Set up your portfolio now to start receiving fan requests!`,
         "application_approved"
       );
     } catch (pushError) {
