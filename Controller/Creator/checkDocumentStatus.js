@@ -26,10 +26,19 @@ const checkDocumentStatus = async (req, res) => {
       };
       return res.status(200).json({ status: statusMap[fanStatus] || "none" });
 
-    } else {
+  } else {
       // Creator: check only docs where fan_submission is NOT true
-      const doc = await documentdb.findOne({ userid, fan_submission: { $ne: true } }).exec();
+      const doc = await documentdb.findOne({ userid, fan_submission: { $ne: true } })
+        .sort({ createdAt: -1 })
+        .exec();
+
       if (doc) {
+        // The document itself carries the real verdict — approval marks
+        // verify=true without deleting the record, so its presence alone
+        // can't tell us "pending" vs "approved".
+        if (doc.verify === true) {
+          return res.status(200).json({ status: "approved" });
+        }
         return res.status(200).json({ status: "pending" });
       }
 

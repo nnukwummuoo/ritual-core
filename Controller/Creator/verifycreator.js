@@ -17,6 +17,7 @@ const createCreator = async (req, res) => {
     if (!user) return res.status(404).json({ ok: false, message: "User not found!" });
 
     user.creator_verified = true;
+    user.Creator_Application_status = "accepted";
     await user.save();
 
     // ✅ 2. Update creator verification status
