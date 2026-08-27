@@ -31,11 +31,60 @@ const createCreator = async (req, res) => {
     idexpire,
   } = data;
 
-  // Validate required fields
+// Validate required fields
   if (!userid || !firstname || !lastname || !email || !dob || !country || !city || !address || !documentType || !idexpire) {
     return res.status(400).json({
       ok: false,
       message: "All fields are required",
+    });
+  }
+
+  // ✅ Lock: already-verified creators and users with a pending application
+  // can never successfully submit another one, regardless of what the
+  // client sends — this is enforced server-side, not just hidden in the UI.
+  const existingUser = await userdb.findById(userid).exec();
+  if (existingUser && existingUser.creator_verified) {
+    return res.status(409).json({
+      ok: false,
+      message: "You are already a verified creator.",
+    });
+  }
+
+ const existingDoc = await documentdb.findOne({ userid, fan_submission: { $ne: true } }).exec();
+  if (existingDoc) {
+    if (existingDoc.verify === true) {
+      return res.status(409).json({
+        ok: false,
+        message: "You are already a verified creator.",
+      });
+    }
+    return res.status(409).json({
+      ok: false,
+      message: "You already have a creator application pending review.",
+    });
+  }
+
+  // ✅ Lock: already-verified fans and users with a pending fan application
+  // can never successfully submit a creator application, enforced server-side.
+  if (existingUser && existingUser.fan_verified) {
+    return res.status(409).json({
+      ok: false,
+      message: "Verified fans cannot submit a creator application.",
+    });
+  }
+  if (existingUser && existingUser.fan_application_status === "pending") {
+    return res.status(409).json({
+      ok: false,
+      message: "You have a fan verification pending review and cannot submit a creator application.",
+    });
+  }
+  const pendingFanDoc = await documentdb.findOne({ userid, fan_submission: true }).exec();
+  if (pendingFanDoc) {
+    return res.status(409).json({
+      ok: false,
+      message: pendingFanDoc.verify === true
+        ? "Verified fans cannot submit a creator application."
+        : "You have a fan verification pending review and cannot submit a creator application.",
     });
   }
 

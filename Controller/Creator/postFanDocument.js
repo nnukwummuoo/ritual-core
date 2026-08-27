@@ -6,11 +6,57 @@ const { pushAdminNotification } = require("../../utiils/sendPushnot");
 
 const postFanDocument = async (req, res) => {
   try {
-    const data = JSON.parse(req.body.data);
+   const data = JSON.parse(req.body.data);
     const { userid } = data;
 
     if (!userid) {
       return res.status(400).json({ ok: false, message: "User ID is required" });
+    }
+
+    // ✅ Lock: verified creators and users with a pending creator application
+    // can never successfully submit a fan verification, enforced server-side.
+    const existingUser = await userdb.findById(userid).exec();
+    if (existingUser && existingUser.creator_verified) {
+      return res.status(409).json({
+        ok: false,
+        message: "Creators cannot submit a fan verification application.",
+      });
+    }
+
+ const pendingCreatorDoc = await documentdb.findOne({ userid, fan_submission: { $ne: true } }).exec();
+    if (pendingCreatorDoc) {
+      return res.status(409).json({
+        ok: false,
+        message: pendingCreatorDoc.verify === true
+          ? "Creators cannot submit a fan verification application."
+          : "You have a creator application pending review and cannot submit a fan verification application.",
+      });
+    }
+
+    // ✅ Lock: already-verified fans and users with a pending fan application
+    // can never successfully resubmit, enforced server-side.
+    if (existingUser && existingUser.fan_verified) {
+      return res.status(409).json({
+        ok: false,
+        message: "You are already a verified fan.",
+      });
+    }
+    if (existingUser && existingUser.fan_application_status === "pending") {
+      return res.status(409).json({
+        ok: false,
+        message: "You already have a fan verification pending review.",
+      });
+    }
+    // Backstop in case the status field and the document record ever drift —
+    // mirrors the same existence-based check used for creator applications.
+    const pendingFanDoc = await documentdb.findOne({ userid, fan_submission: true }).exec();
+    if (pendingFanDoc) {
+      return res.status(409).json({
+        ok: false,
+        message: pendingFanDoc.verify === true
+          ? "You are already a verified fan."
+          : "You already have a fan verification pending review.",
+      });
     }
 
     if (!req.files || req.files.length !== 2) {
