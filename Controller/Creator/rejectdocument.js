@@ -32,7 +32,7 @@ const rejectdocument = async (req, res) => {
     // 4. Notify user
     let respond = {
       userid,
-      message: "Your creator application has been rejected",
+      message: "Your creator application was not approved.",
       seen: false,
     };
     await admindb.create(respond);
