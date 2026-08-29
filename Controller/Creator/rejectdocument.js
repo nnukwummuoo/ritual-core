@@ -40,7 +40,7 @@ const rejectdocument = async (req, res) => {
     // 5. Send response
     return res.status(200).json({
       ok: true,
-      message: "Model application document rejected successfully",
+      message: "Creator application document rejected successfully",
       rejectedDocId: docID,
     });
   } catch (err) {
