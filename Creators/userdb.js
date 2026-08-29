@@ -136,6 +136,11 @@ const markertdata = new Scheme(
   required: false,
   default: false,
 },
+first_portfolio_created_at: {
+  type: Date,
+  required: false,
+  default: null,
+},
 fan_application_status: {
   type: String,
   enum: ["none", "pending", "accepted", "rejected", "approved", "declined"],

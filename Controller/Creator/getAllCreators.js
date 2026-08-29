@@ -1,6 +1,13 @@
 const creators = require("../../Creators/creators");
 const GlobalSettings = require("../../Creators/GlobalSettings");
 
+const userdb = require("../../Creators/userdb");
+
+const NEW_BADGE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const isWithinNewBadgeWindow = (firstPortfolioCreatedAt) =>
+  !!firstPortfolioCreatedAt &&
+  (Date.now() - new Date(firstPortfolioCreatedAt).getTime()) <= NEW_BADGE_WINDOW_MS;
+
 const getAllCreators = async (req, res) => {
   try {
     // Get all creators (no sorting at database level for flexibility)
@@ -13,6 +20,13 @@ const getAllCreators = async (req, res) => {
         .status(200)
         .json({ ok: false, message: "No creators found", host: [] });
     }
+
+    // Batch-fetch first_portfolio_created_at for every creator's owning user
+    // in one query, so the "New" badge stays a single flat DB lookup even
+    // on this public endpoint.
+    const userIds = [...new Set(allCreators.map((c) => c.userid).filter(Boolean))];
+    const owners = await userdb.find({ _id: { $in: userIds } }, "first_portfolio_created_at").exec();
+    const firstPortfolioMap = new Map(owners.map((u) => [String(u._id), u.first_portfolio_created_at]));
 
     const host = allCreators.map((creator) => {
       const photolink = creator.creatorfiles.map((creatorfile) => creatorfile.creatorfilelink);
@@ -40,6 +54,9 @@ const getAllCreators = async (req, res) => {
         isOnline: creator.isOnline || false,
         views: creator.views || 0,
         isFollowing: false,
+        // Server-computed, permanent — tied to the account's very first ever
+        // portfolio, never resets on delete/recreate, ignores client storage.
+        isNew: isWithinNewBadgeWindow(firstPortfolioMap.get(String(creator.userid))),
       };
     });
 

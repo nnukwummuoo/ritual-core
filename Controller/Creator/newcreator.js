@@ -136,13 +136,17 @@ try {
 
     const newCreator = await creators.create(creator);
 
-    await currentuser
-      .updateOne({
-        creator_portfolio: true,
-        creator_portfolio_id: newCreator._id,
-        creator_portfolio_id: newCreator._id,
-      })
-      .exec();
+    const userUpdate = {
+      creator_portfolio: true,
+      creator_portfolio_id: newCreator._id,
+    };
+    // Set ONLY the very first time this account ever creates a portfolio.
+    // Never overwritten afterward — survives delete + recreate permanently.
+    if (!currentuser.first_portfolio_created_at) {
+      userUpdate.first_portfolio_created_at = new Date();
+    }
+
+    await currentuser.updateOne(userUpdate).exec();
 
     await currentuser.save();
 

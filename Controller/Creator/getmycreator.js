@@ -51,6 +51,8 @@ const getMyCreator = async (req, res) => {
         creator.host_id
       ].filter(Boolean);
 
+    let firstPortfolioCreatedAt = null;
+
       for (const userId of possibleUserIds) {
         try {
           const user = await userdb.findOne({ _id: userId }).exec();
@@ -60,6 +62,7 @@ const getMyCreator = async (req, res) => {
               vipEndDate: user.vipEndDate || null
             };
             isOnline = user.active || false;
+            firstPortfolioCreatedAt = user.first_portfolio_created_at || null;
 
             // Check if current user is following this creator
             if (userid && user.followers && user.followers.includes(userid)) {
@@ -71,6 +74,10 @@ const getMyCreator = async (req, res) => {
           // Continue to next user ID
         }
       }
+
+      const NEW_BADGE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+      const isNew = !!firstPortfolioCreatedAt &&
+        (Date.now() - new Date(firstPortfolioCreatedAt).getTime()) <= NEW_BADGE_WINDOW_MS;
 
       return {
         hostid: creator._id,
@@ -101,6 +108,8 @@ const getMyCreator = async (req, res) => {
         isOnline: isOnline,
         // Include following status
         isFollowing: isFollowing,
+        // Server-computed, permanent — see getAllCreators.js for the same logic
+        isNew,
       };
     }));
 
