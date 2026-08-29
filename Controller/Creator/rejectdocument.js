@@ -20,11 +20,12 @@ const rejectdocument = async (req, res) => {
     // 2. Delete the document (or mark rejected if you want history instead of deletion)
     await doc.deleteOne();
 
-    // 3. Reset user’s model info
+   // 3. Reset user's model info
     const user = await userdb.findById(userid).exec();
     if (user) {
       user.creator_portfolio_id = "";
       user.isCreator = false;
+      user.Creator_Application_status = "rejected";
       await user.save();
     }
 

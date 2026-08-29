@@ -182,6 +182,8 @@ if (!results || results.length < 2 || !results[0].file_link || !results[1].file_
 
     await documentdb.create(document);
 
+    await userdb.findByIdAndUpdate(userid, { Creator_Application_status: "pending" }).exec();
+
     let respond = {
       userid,
       message: `Your application is under review. Hang tight — you’re almost ready to start receiving fan requests!`,
