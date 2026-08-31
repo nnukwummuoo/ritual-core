@@ -61,9 +61,16 @@ const updateView = async (req, res) => {
           views: currentViews,
         });
       }
+    } else {
+      // Anonymous visitor — can't dedupe by identity, so just count the visit.
+      // This never affects ranking; it's purely for the creator's own info.
+      await creators.findByIdAndUpdate(currentCreator._id, {
+        $inc: { nonUserViews: 1 },
+      });
     }
 
     const totalViews = currentViews.length;
+    const nonUserViewsCount = userId ? (currentCreator.nonUserViews || 0) : (currentCreator.nonUserViews || 0) + 1;
     const lastNotificationView = currentCreator.lastNotificationView || 0;
 
     // 5. NOTIFICATION SYSTEM (MILESTONES ONLY)
@@ -136,10 +143,11 @@ const updateView = async (req, res) => {
       }
     }
 
-    // 7. RESPONSE
+   // 7. RESPONSE
     return res.status(200).json({
       ok: true,
       views: totalViews,
+      nonUserViews: nonUserViewsCount,
     });
 
   } catch (err) {

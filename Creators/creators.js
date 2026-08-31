@@ -102,6 +102,13 @@ city: {
       type: [String],
       default: [],
     },
+    // Anonymous/guest profile visits — can't be deduped by identity, so this
+    // is a simple running counter. Purely informational: never contributes
+    // to ranking, unlike `views` above (unique logged-in visitors).
+    nonUserViews: {
+      type: Number,
+      default: 0,
+    },
     lastNotificationView: {
       type: Number,
       default: 0,
