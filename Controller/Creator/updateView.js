@@ -49,13 +49,11 @@ const updateView = async (req, res) => {
 
     // 3. GET CURRENT VIEWS
     let currentViews = currentCreator.views || [];
-    let viewAdded = false;
 
-    // 4. ADD VIEW IF NEW USER
+    // 4. ADD VIEW IF NEW USER (this array still drives ranking — unchanged)
     if (userId) {
       if (!currentViews.includes(userId)) {
         currentViews.push(userId);
-        viewAdded = true;
 
         await creators.findByIdAndUpdate(currentCreator._id, {
           views: currentViews,
@@ -63,7 +61,7 @@ const updateView = async (req, res) => {
       }
     } else {
       // Anonymous visitor — can't dedupe by identity, so just count the visit.
-      // This never affects ranking; it's purely for the creator's own info.
+      // Never affects ranking; only affects the combined total below.
       await creators.findByIdAndUpdate(currentCreator._id, {
         $inc: { nonUserViews: 1 },
       });
@@ -71,10 +69,17 @@ const updateView = async (req, res) => {
 
     const totalViews = currentViews.length;
     const nonUserViewsCount = userId ? (currentCreator.nonUserViews || 0) : (currentCreator.nonUserViews || 0) + 1;
+    // Notifications are about visibility/momentum, so they're based on total
+    // traffic (user + non-user) — matches what's actually shown on the
+    // profile. Ranking above stays user-only and is untouched by this.
+    const combinedTotal = totalViews + nonUserViewsCount;
     const lastNotificationView = currentCreator.lastNotificationView || 0;
 
     // 5. NOTIFICATION SYSTEM (MILESTONES ONLY)
-    if (viewAdded && totalViews > 0) {
+    // Evaluated on EVERY visit now, not just new-unique-user ones — otherwise
+    // a creator whose growth is mostly from shared links would rarely (or
+    // never) trigger a check at all.
+    if (combinedTotal > 0) {
       let shouldNotify = false;
       let notificationTitle = "";
       let notificationMessage = "";
@@ -82,31 +87,31 @@ const updateView = async (req, res) => {
 
       // Determine notification interval based on view count
       // Only send notifications at milestone views (not at 0)
-      if (totalViews < 100) {
+      if (combinedTotal < 100) {
         // Below 100 views: every 10 views (10, 20, 30, 40, 50, 60, 70, 80, 90)
-        if (totalViews % 10 === 0 && totalViews > lastNotificationView) {
+        if (combinedTotal % 10 === 0 && combinedTotal > lastNotificationView) {
           shouldNotify = true;
           notificationTitle = "You're getting noticed!";
           notificationEmoji = "🎉";
-          notificationMessage = `Your profile just hit ${totalViews} views - fans are starting to discover you 👀`;
+          notificationMessage = `Your portfolio just hit ${combinedTotal} views - fans are starting to discover you 👀`;
         }
       } 
-      else if (totalViews >= 100 && totalViews < 1000) {
+      else if (combinedTotal >= 100 && combinedTotal < 1000) {
         // Between 100-999 views: every 20 views (100, 120, 140, 160, 180, 200, ...)
-        if (totalViews % 20 === 0 && totalViews > lastNotificationView) {
+        if (combinedTotal % 20 === 0 && combinedTotal > lastNotificationView) {
           shouldNotify = true;
           notificationTitle = "Still growing!";
           notificationEmoji = "🔥";
-          notificationMessage = `You've reached ${totalViews} total views - your visibility keeps climbing 🚀`;
+          notificationMessage = `You've reached ${combinedTotal} total views - your visibility keeps climbing 🚀`;
         }
       } 
-      else if (totalViews >= 1000) {
+      else if (combinedTotal >= 1000) {
         // 1000+ views: every 100 views (1000, 1100, 1200, 1300, ...)
-        if (totalViews % 100 === 0 && totalViews > lastNotificationView) {
+        if (combinedTotal % 100 === 0 && combinedTotal > lastNotificationView) {
           shouldNotify = true;
           notificationTitle = "Creator on the rise!";
           notificationEmoji = "🌟";
-          notificationMessage = `You just crossed ${totalViews} views. You're building real momentum - keep it up 💪`;
+          notificationMessage = `You just crossed ${combinedTotal} views. You're building real momentum - keep it up 💪`;
         }
       }
 
@@ -132,9 +137,9 @@ const updateView = async (req, res) => {
             seen: false
           });
 
-          // update last notification view count
+        // update last notification view count (tracked in combined-total terms now)
           await creators.findByIdAndUpdate(currentCreator._id, {
-            lastNotificationView: totalViews,
+            lastNotificationView: combinedTotal,
           });
 
         } catch (notifError) {
