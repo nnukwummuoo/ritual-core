@@ -76,11 +76,11 @@ const cancelFanRequest = async (req, res) => {
       }
 
       if (creatoruser?.userid) {
-        await sendEmail(creatoruser.userid, `A fan cancelled their ${hostType.toLowerCase()} request`);
-        await pushActivityNotification(creatoruser.userid, `A fan cancelled their ${hostType.toLowerCase()} request`, "request_cancelled");
+        await sendEmail(creatoruser.userid, `Your ${hostType.toLowerCase()} request was cancelled`);
+        await pushActivityNotification(creatoruser.userid, `Your ${hostType.toLowerCase()} request was cancelled`, "request_cancelled");
         await admindb.create({
           userid: creatoruser.userid,
-          message: `A fan cancelled their ${hostType.toLowerCase()} request`,
+          message: `Your ${hostType.toLowerCase()} request was cancelled`,
           seen: false
         });
       }
