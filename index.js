@@ -241,6 +241,7 @@ app.use("/adminnotify", require("./routes/api/Admin/adminnotify"));
 app.use("/vipanalysis", require("./routes/api/Admin/vipAnalysis"));
 app.use("/websiteanalytics", require("./routes/api/Admin/websiteAnalytics"));
 app.use("/api/admin/transactions", require("./routes/api/Admin/transactions.routes"));
+app.use("/api/admin/bookings", require("./routes/api/Admin/bookings.routes"));
 app.use("/api/admin/notifications", require("./routes/api/Admin/notificationCleanupRoutes"));
 
 // New Admin Routes

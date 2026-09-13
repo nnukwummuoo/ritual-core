@@ -57,7 +57,13 @@ sessionNotified: {
 startNotified: {
   type: Boolean,
   default: false,
-}
+},
+bookingRef: {
+  type: String,
+  required: false,
+  unique: true,
+  sparse: true, // lets existing/older bookings without one coexist
+},
   },
   { timestamps: true }
 );

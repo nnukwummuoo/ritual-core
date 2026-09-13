@@ -5,6 +5,23 @@ const historydb = require("../../Creators/mainbalance")
 const admindb = require("../../Creators/admindb")
 let sendEmail = require("../../utiils/sendEmailnot")
 let { pushActivityNotification } = require("../../utiils/sendPushnot")
+const crypto = require("crypto")
+
+// Generates a short, human-friendly unique booking reference (e.g. MMK-7F3K9QZ2)
+// and retries on the astronomically unlikely chance of a collision.
+async function generateBookingRef() {
+  const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I to avoid confusion
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let code = "";
+    const bytes = crypto.randomBytes(8);
+    for (let i = 0; i < 8; i++) code += ALPHABET[bytes[i] % ALPHABET.length];
+    const ref = `MMK-${code}`;
+    const existing = await requestdb.findOne({ bookingRef: ref }).exec();
+    if (!existing) return ref;
+  }
+  // Fallback: astronomically unlikely to be reached, but guarantees uniqueness
+  return `MMK-${Date.now().toString(36).toUpperCase()}`;
+}
 
 const createLike = async (req, res) => {
 
@@ -87,6 +104,8 @@ const createLike = async (req, res) => {
 
         // IMPORTANT: Pending requests expire in 23 hours 14 minutes
         // After acceptance, they get extended based on type (10 days for Fan Call, 20 days for others)
+        const bookingRef = await generateBookingRef();
+
         let requests = {
             userid,
             creator_portfolio_id,
@@ -96,6 +115,7 @@ const createLike = async (req, res) => {
             status: "request",
             date,
             price: creatorprice,
+            bookingRef,
             expiresAt: new Date(Date.now() + (23 * 60 * 60 * 1000) + (14 * 60 * 1000)) // 23h 14m for pending requests
         }
 

@@ -221,6 +221,7 @@ const getAllFanRequests = async (req, res) => {
         return {
           id: request._id,
           requestId: request._id,
+          bookingRef: request.bookingRef || null,
           type: userType, // 'creator' or 'fan'
           date: request.date,
           time: request.time,
