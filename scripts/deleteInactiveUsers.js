@@ -15,17 +15,17 @@ const connectDB = async () => {
 
 const cleanupInactiveUsers = async () => {
     try {
-        const now = new Date();
-        const sixMonthsAgo = new Date(now.getTime() - (180 * 24 * 60 * 60 * 1000)); // Approx 6 months
+       const now = new Date();
+        const thirtySixMonthsAgo = new Date(now.getTime() - (1080 * 24 * 60 * 60 * 1000)); // Approx 36 months
 
-        console.log(`Starting cleanup for users inactive since: ${sixMonthsAgo.toISOString()}`);
+        console.log(`Starting cleanup for users inactive since: ${thirtySixMonthsAgo.toISOString()}`);
 
         const inactiveQuery = {
             $or: [
-                { lastActive: { $lt: sixMonthsAgo } },
+                { lastActive: { $lt: thirtySixMonthsAgo } },
                 {
                     lastActive: { $exists: false },
-                    updatedAt: { $lt: sixMonthsAgo }
+                    updatedAt: { $lt: thirtySixMonthsAgo }
                 }
             ]
         };

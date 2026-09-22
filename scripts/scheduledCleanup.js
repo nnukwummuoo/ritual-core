@@ -24,15 +24,17 @@ class ScheduledCleanup {
       timezone: "UTC"
     });
 
-    // Run inactive user cleanup once a day at 03:00 UTC (0 3 * * *)
-    this.inactiveUserCleanupTask = cron.schedule('0 3 * * *', async () => {
-      console.log('⏰ [Cron] Starting scheduled inactive user cleanup...');
-      const { cleanupInactiveUsers } = require('./deleteInactiveUsers');
-      await cleanupInactiveUsers();
-    }, {
-      scheduled: true,
-      timezone: "UTC"
-    });
+     // DISABLED FOR NOW — dormant-account deletion (36-month threshold).
+    // Remove this comment block to re-enable it whenever it's needed again.
+    // // Run inactive user cleanup once a day at 03:00 UTC (0 3 * * *)
+    // this.inactiveUserCleanupTask = cron.schedule('0 3 * * *', async () => {
+    //   console.log('⏰ [Cron] Starting scheduled inactive user cleanup...');
+    //   const { cleanupInactiveUsers } = require('./deleteInactiveUsers');
+    //   await cleanupInactiveUsers();
+    // }, {
+    //   scheduled: true,
+    //   timezone: "UTC"
+    // });
 
     // Run initial cleanup on startup
     setTimeout(() => {
