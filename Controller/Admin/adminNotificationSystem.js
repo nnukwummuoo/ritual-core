@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const userdb = require("../../Creators/userdb");
 const admindb = require("../../Creators/admindb");
 const { pushActivityNotification, pushAdminNotification } = require("../../utiils/sendPushnot");
@@ -65,8 +66,13 @@ const adminNotificationSystem = async (req, res) => {
             });
         }
 
-        const userIds = targetUsers.map(user => user._id);
+const userIds = targetUsers.map(user => user._id);
         const notificationData = [];
+        // Every per-user doc created by this send shares one batchId, so the
+        // admin dashboard can group/edit/delete them as a single campaign
+        // reliably, regardless of how long the insert takes or how many users
+        // are targeted.
+        const batchId = crypto.randomUUID();
 
         // Create notifications for all target users
         for (let i = 0; i < userIds.length; i++) {
@@ -81,7 +87,8 @@ const adminNotificationSystem = async (req, res) => {
                 hasLearnMore: hasLearnMore,
                 learnMoreUrl: learnMoreUrl,
                 targetGender: (targetUserIds && targetUserIds.length > 0) ? 'specific' : targetGender,
-                isActive: true // New field to track if notification is still active
+                isActive: true, // New field to track if notification is still active
+                batchId: batchId
             };
 
             notificationData.push(notification);

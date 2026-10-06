@@ -33,11 +33,14 @@ const getNotificationDetails = async (req, res) => {
 
         console.log('✅ getNotificationDetails: User found:', user.firstname, user.lastname);
 
-        // Get the notification details for this specific user
+      // Get the notification details for this specific user.
+        // Note: isActive is intentionally NOT filtered here — a notification is only
+        // "active" while it's the current admin broadcast (for the popup). Once a newer
+        // broadcast is sent, older ones become inactive but remain in the user's
+        // notification feed, and "Learn more" must still work for them.
         const notification = await admindb.findOne({
             _id: notificationId,
             adminNotification: true,
-            isActive: true,
             userid: userid // Look for notification specifically created for this user
         }).exec();
 

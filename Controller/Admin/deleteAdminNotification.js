@@ -20,24 +20,34 @@ const deleteAdminNotification = async (req, res) => {
             return res.status(404).json({ "ok": false, 'message': 'Campaign not found' });
         }
 
-        // Group notifications by campaign - find all notifications with same title, message, targetGender, created at similar time
-        const originalTitle = sampleNotification.title;
-        const originalMessage = sampleNotification.message?.substring(0, 50);
-        const targetGender = sampleNotification.targetGender || 'all';
+        // Find all notifications from this campaign. Preferred: match by
+        // batchId, stamped on every doc from the same send — exact, no
+        // heuristics. Fallback: for notifications sent before batchId
+        // existed, fall back to the old title/message/time-window match.
+        let campaignNotifications;
+        if (sampleNotification.batchId) {
+            campaignNotifications = await admindb.find({
+                adminNotification: true,
+                batchId: sampleNotification.batchId
+            }).exec();
+        } else {
+            const originalTitle = sampleNotification.title;
+            const originalMessage = sampleNotification.message?.substring(0, 50);
+            const targetGender = sampleNotification.targetGender || 'all';
 
-        // Find all notifications from this campaign
-        const startTime = new Date(sampleNotification.createdAt);
-        startTime.setMinutes(startTime.getMinutes() - 1);
-        const endTime = new Date(sampleNotification.createdAt);
-        endTime.setMinutes(endTime.getMinutes() + 1);
+            const startTime = new Date(sampleNotification.createdAt);
+            startTime.setMinutes(startTime.getMinutes() - 1);
+            const endTime = new Date(sampleNotification.createdAt);
+            endTime.setMinutes(endTime.getMinutes() + 1);
 
-        const campaignNotifications = await admindb.find({
-            adminNotification: true,
-            title: originalTitle,
-            message: { $regex: originalMessage },
-            targetGender: targetGender,
-            createdAt: { $gte: startTime, $lte: endTime }
-        }).exec();
+            campaignNotifications = await admindb.find({
+                adminNotification: true,
+                title: originalTitle,
+                message: { $regex: originalMessage },
+                targetGender: targetGender,
+                createdAt: { $gte: startTime, $lte: endTime }
+            }).exec();
+        }
 
         if (campaignNotifications.length === 0) {
             return res.status(404).json({ "ok": false, 'message': 'No notifications found in this campaign' });

@@ -15,75 +15,79 @@ const getAllAdminNotifications = async (req, res) => {
             .sort({ createdAt: -1 })
             .exec();
 
-        // Group notifications by campaign
-        // Group by: same title, message, targetGender, created within 5 minutes
+        // Group notifications into campaigns.
+        // Preferred path: group by batchId (one send = one batchId, stamped on
+        // every per-user doc at creation time) — this is exact and O(n).
+        // Legacy fallback: notifications created before batchId existed don't
+        // have one, so each is kept as its own single-recipient campaign
+        // instead of re-running the old, fragile title/message/time-window scan.
         const campaigns = {};
-        const processedIds = new Set();
-        
-        for (const notif of notifications) {
-            if (processedIds.has(notif._id.toString())) continue;
-            
-            // Find all notifications that belong to the same campaign
-            // (same title, message, targetGender, created within 5 minutes)
-            const notifTime = new Date(notif.createdAt);
-            const timeWindowStart = new Date(notifTime.getTime() - 5 * 60 * 1000); // 5 minutes before
-            const timeWindowEnd = new Date(notifTime.getTime() + 5 * 60 * 1000); // 5 minutes after
-            
-            const campaignNotifications = notifications.filter(n => {
-                if (processedIds.has(n._id.toString())) return false;
-                return (
-                    n.title === notif.title &&
-                    n.message === notif.message &&
-                    (n.targetGender || 'all') === (notif.targetGender || 'all') &&
-                    new Date(n.createdAt) >= timeWindowStart &&
-                    new Date(n.createdAt) <= timeWindowEnd
-                );
-            });
-            
-            // Mark all as processed
-            campaignNotifications.forEach(n => processedIds.add(n._id.toString()));
-            
-            // Create campaign object
-            const campaignKey = `${notif._id}_${Date.now()}`;
-            const targetUserIds = [...new Set(campaignNotifications.map(n => n.userid).filter(Boolean))];
-            
-            campaigns[campaignKey] = {
-                _id: notif._id, // Use first notification ID as campaign ID
-                title: notif.title,
-                message: notif.message,
-                targetGender: notif.targetGender || 'all',
-                isSpecificUsers: notif.targetGender === 'specific',
-                hasLearnMore: notif.hasLearnMore || false,
-                learnMoreUrl: notif.learnMoreUrl || null,
-                isActive: campaignNotifications.some(n => n.isActive),
-                type: notif.type || 'admin_broadcast',
-                createdAt: notif.createdAt,
-                updatedAt: campaignNotifications.reduce((latest, n) => {
-                    return new Date(n.updatedAt) > new Date(latest) ? n.updatedAt : latest;
-                }, notif.updatedAt),
-                totalSent: campaignNotifications.length,
-                targetUserIds: targetUserIds,
-                users: []
-            };
-        }
 
-        // Get user details for each campaign
-        const campaignList = Object.values(campaigns);
-        for (const campaign of campaignList) {
-            if (campaign.targetUserIds.length > 0) {
-                const users = await userdb.find({ _id: { $in: campaign.targetUserIds } })
-                    .select('firstname lastname username photolink gender creator_verified')
-                    .exec();
-                campaign.users = users.map(u => ({
-                    _id: u._id,
-                    name: `${u.firstname} ${u.lastname}`,
-                    username: u.username,
-                    photolink: u.photolink,
-                    gender: u.gender,
-                    creator_verified: u.creator_verified
-                }));
+        for (const notif of notifications) {
+            const campaignKey = notif.batchId || `legacy_${notif._id}`;
+
+            if (!campaigns[campaignKey]) {
+                campaigns[campaignKey] = {
+                    _id: notif._id, // first notification seen in this batch
+                    title: notif.title,
+                    message: notif.message,
+                    targetGender: notif.targetGender || 'all',
+                    isSpecificUsers: notif.targetGender === 'specific',
+                    hasLearnMore: notif.hasLearnMore || false,
+                    learnMoreUrl: notif.learnMoreUrl || null,
+                    isActive: false,
+                    type: notif.type || 'admin_broadcast',
+                    createdAt: notif.createdAt,
+                    updatedAt: notif.updatedAt,
+                    totalSent: 0,
+                    targetUserIds: [],
+                    users: []
+                };
+            }
+
+            const campaign = campaigns[campaignKey];
+            campaign.isActive = campaign.isActive || !!notif.isActive;
+            campaign.totalSent += 1;
+            if (notif.userid) campaign.targetUserIds.push(notif.userid);
+            if (new Date(notif.updatedAt) > new Date(campaign.updatedAt)) {
+                campaign.updatedAt = notif.updatedAt;
+            }
+            if (new Date(notif.createdAt) < new Date(campaign.createdAt)) {
+                campaign.createdAt = notif.createdAt;
             }
         }
+
+        const campaignList = Object.values(campaigns);
+
+        // De-dupe target user ids per campaign
+        campaignList.forEach((c) => {
+            c.targetUserIds = [...new Set(c.targetUserIds)];
+        });
+
+        // Fetch every targeted user across all campaigns in a single query
+        // instead of one query per campaign (avoids an N+1 slowdown as the
+        // number of campaigns grows).
+        const allUserIds = [...new Set(campaignList.flatMap((c) => c.targetUserIds))];
+        const users = allUserIds.length > 0
+            ? await userdb.find({ _id: { $in: allUserIds } })
+                .select('firstname lastname username photolink gender creator_verified')
+                .exec()
+            : [];
+
+        const usersById = new Map(users.map((u) => [u._id.toString(), {
+            _id: u._id,
+            name: `${u.firstname} ${u.lastname}`,
+            username: u.username,
+            photolink: u.photolink,
+            gender: u.gender,
+            creator_verified: u.creator_verified
+        }]));
+
+        campaignList.forEach((c) => {
+            c.users = c.targetUserIds
+                .map((id) => usersById.get(id.toString()))
+                .filter(Boolean);
+        });
 
         return res.status(200).json({
             "ok": true,
@@ -98,4 +102,3 @@ const getAllAdminNotifications = async (req, res) => {
 };
 
 module.exports = getAllAdminNotifications;
-

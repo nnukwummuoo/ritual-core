@@ -60,10 +60,18 @@ const markertdata = new Scheme(
       required: false,
       default: true,
     },
-    type: {
+ type: {
       type: String,
       required: false,
       default: 'admin_broadcast',
+    },
+    // Groups all per-user notification docs created by a single admin broadcast.
+    // Replaces the old title/message/time-window heuristic used to group,
+    // edit and delete a campaign.
+    batchId: {
+      type: String,
+      required: false,
+      index: true,
     },
   },
   { timestamps: true }
