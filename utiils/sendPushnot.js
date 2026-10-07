@@ -100,11 +100,18 @@ const pushSupportNotification = async (userid, message) => {
   });
 };
 
-const pushAdminNotification = async (userid, message, adminType = "admin") => {
+// `adminType` is kept as the 3rd param for backward compatibility with every
+// existing call site (support chat replies, verification approvals/rejections,
+// report handling, etc.) — none of those pass `options`, so they keep getting
+// exactly the current "MMEKO SUPPORT" / support-chat push, unchanged.
+// Admin broadcast notifications (sent from the Notifications tab) pass
+// `options.title`/`options.url` so the push bar shows the real notification
+// title and opens the right page instead of the support chat.
+const pushAdminNotification = async (userid, message, adminType = "admin", options = {}) => {
   await pushmessage(userid, message, "/icons/m-logo.png", {
-    title: "MMEKO SUPPORT",
-    type: "support",
-    url: "/message/supportchat",
+    title: options.title || "MMEKO SUPPORT",
+    type: options.type || "support",
+    url: options.url || "/message/supportchat",
     icon: "/icons/m-logo.png"
   });
 };

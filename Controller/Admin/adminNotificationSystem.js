@@ -112,8 +112,9 @@ const userIds = targetUsers.map(user => user._id);
             { isActive: false }
         );
 
-        // Insert all new notifications
-        await admindb.insertMany(notificationData);
+  // Insert all new notifications (capture the inserted docs so we have
+        // each one's real _id, needed to deep-link "Learn more" pushes)
+        const insertedDocs = await admindb.insertMany(notificationData);
 
         // Send push notifications based on type
         let pushSuccessCount = 0;
@@ -124,7 +125,12 @@ const userIds = targetUsers.map(user => user._id);
                 if (notificationType === 'admin_activity') {
                     await pushActivityNotification(userIds[i], message, "admin_activity");
                 } else {
-                    await pushAdminNotification(userIds[i], message, title);
+                    const notifDoc = insertedDocs[i];
+                    await pushAdminNotification(userIds[i], message, "broadcast", {
+                        title: title,
+                        type: "admin_broadcast",
+                        url: hasLearnMore && notifDoc ? `/learn-more/${notifDoc._id}` : "/notifications"
+                    });
                 }
                 pushSuccessCount++;
             } catch (pushError) {

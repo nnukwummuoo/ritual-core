@@ -97,7 +97,11 @@ const updateAdminNotification = async (req, res) => {
                         if (notif.type === 'admin_activity') {
                             await pushActivityNotification(notif.userid, message, "admin_activity");
                         } else {
-                            await pushAdminNotification(notif.userid, message, title);
+                            await pushAdminNotification(notif.userid, message, "broadcast", {
+                                title: title,
+                                type: "admin_broadcast",
+                                url: hasLearnMore ? `/learn-more/${notif._id}` : "/notifications"
+                            });
                         }
                         pushSuccessCount++;
                     } catch (pushError) {
