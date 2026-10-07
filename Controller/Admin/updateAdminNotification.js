@@ -19,8 +19,16 @@ const updateAdminNotification = async (req, res) => {
         return res.status(400).json({ "ok": false, 'message': 'Campaign ID is required' });
     }
 
-    if (!title || !message) {
+ if (!title || !message) {
         return res.status(400).json({ "ok": false, 'message': 'Title and message are required' });
+    }
+
+    if (title.length > 25) {
+        return res.status(400).json({ "ok": false, 'message': 'Title must be 25 characters or fewer' });
+    }
+
+    if (message.length > 400) {
+        return res.status(400).json({ "ok": false, 'message': 'Message must be 193 characters or fewer' });
     }
 
     try {

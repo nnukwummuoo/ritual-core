@@ -19,8 +19,16 @@ const adminNotificationSystem = async (req, res) => {
         return res.status(400).json({ "ok": false, 'message': 'Message is required' });
     }
 
-    if (!title) {
+   if (!title) {
         return res.status(400).json({ "ok": false, 'message': 'Title is required' });
+    }
+
+    if (title.length > 25) {
+        return res.status(400).json({ "ok": false, 'message': 'Title must be 25 characters or fewer' });
+    }
+
+    if (message.length > 400) {
+        return res.status(400).json({ "ok": false, 'message': 'Message must be 193 characters or fewer' });
     }
 
     // Learn More URL is optional - if hasLearnMore is true, it can be empty
@@ -72,7 +80,10 @@ const userIds = targetUsers.map(user => user._id);
         // admin dashboard can group/edit/delete them as a single campaign
         // reliably, regardless of how long the insert takes or how many users
         // are targeted.
-        const batchId = crypto.randomUUID();
+       const batchId = crypto.randomUUID();
+        const now = new Date();
+        // Auto-delete 30 days from now if nobody deletes it manually first.
+        const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
         // Create notifications for all target users
         for (let i = 0; i < userIds.length; i++) {
@@ -82,13 +93,14 @@ const userIds = targetUsers.map(user => user._id);
                 title: title,
                 seen: false,
                 type: notificationType,
-                createdAt: new Date(),
+                createdAt: now,
                 adminNotification: true,
                 hasLearnMore: hasLearnMore,
                 learnMoreUrl: learnMoreUrl,
                 targetGender: (targetUserIds && targetUserIds.length > 0) ? 'specific' : targetGender,
                 isActive: true, // New field to track if notification is still active
-                batchId: batchId
+                batchId: batchId,
+                expiresAt: expiresAt
             };
 
             notificationData.push(notification);

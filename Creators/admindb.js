@@ -65,13 +65,24 @@ const markertdata = new Scheme(
       required: false,
       default: 'admin_broadcast',
     },
-    // Groups all per-user notification docs created by a single admin broadcast.
+// Groups all per-user notification docs created by a single admin broadcast.
     // Replaces the old title/message/time-window heuristic used to group,
     // edit and delete a campaign.
     batchId: {
       type: String,
       required: false,
       index: true,
+    },
+    // Only set on admin broadcast docs, to 30 days after creation. MongoDB's
+    // TTL monitor deletes the document once this time passes, automatically
+    // — no cron job required. Manual deletion from the admin dashboard still
+    // works exactly as before; this is just a safety net for notifications
+    // nobody deletes. Docs without this field (every other notification
+    // type — likes, follows, PPV, etc.) are left alone.
+    expiresAt: {
+      type: Date,
+      required: false,
+      index: { expires: 0 },
     },
   },
   { timestamps: true }
