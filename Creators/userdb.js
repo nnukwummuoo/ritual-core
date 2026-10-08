@@ -263,9 +263,32 @@ fan_application_status: {
       type: Number,
       default: 0,
     },
-    ppvEnabled: {
+ ppvEnabled: {
       type: Boolean,
       default: false,
+    },
+    // ── WebAuthn / Passkeys ──────────────────────────────────────────────
+    // One user can register multiple authenticators (phone biometrics,
+    // laptop fingerprint reader, security key, etc.)
+    webauthnCredentials: {
+      type: [
+        {
+          credentialID: { type: String, required: true }, // base64url, unique per credential
+          publicKey: { type: Buffer, required: true },
+          counter: { type: Number, required: true, default: 0 },
+          transports: { type: [String], default: [] }, // e.g. ["internal"], ["hybrid"]
+          deviceLabel: { type: String, default: "Passkey" }, // user-friendly name shown in settings
+          createdAt: { type: Date, default: Date.now },
+          lastUsedAt: { type: Date, default: null },
+        },
+      ],
+      default: [],
+    },
+    // Short-lived challenge issued during a register/login ceremony.
+    // Cleared immediately after it's consumed.
+    currentWebauthnChallenge: {
+      type: String,
+      required: false,
     },
   },
   { timestamps: true }

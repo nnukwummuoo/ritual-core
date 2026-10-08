@@ -164,6 +164,7 @@ app.use("/verifyemail", require("./routes/Auth/verifyEmail"));
 app.use("/register", require("./routes/Auth/register"));
 app.use("/logout", require("./routes/Auth/logout"));
 app.use("/login", loginLimiter, require("./routes/Auth/login"));
+app.use("/webauthn", require("./routes/Auth/webauthn"));
 app.use("/forgetpassword", forgotPasswordLimiter, require("./routes/Auth/forgetpassword"));
 app.use("/completeregister", require("./routes/Auth/completeregister"));
 app.use("/comfirmpasscode", require("./routes/Auth/comfirmpasscode"));
