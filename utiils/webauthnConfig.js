@@ -16,7 +16,6 @@ const expectedOrigins = [
   process.env.WEBAUTHN_ORIGIN,
   "https://mmeko.com",
   "https://www.mmeko.com",
-  "https://mmekowebsite-mu.vercel.app",
 ].filter(Boolean);
 
 module.exports = { rpID, rpName, expectedOrigins };
