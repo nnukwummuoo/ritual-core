@@ -68,6 +68,25 @@ const verifyAuthentication = async (req, res) => {
       "publicKey length:", matchingCredential.publicKey?.length
     );
 
+  // The installed version's verifyAuthenticationResponse threw
+    // "Cannot read properties of undefined (reading 'counter')" when only
+    // given `credential`, meaning it internally destructures an
+    // `authenticator` option instead (the pre-v10 param name) — even though
+    // registration's *response* shape already uses the newer
+    // `credential`-nested form. Supply both shapes so whichever one this
+    // version actually reads, it finds real data instead of undefined.
+    const credentialForVerification = {
+      id: matchingCredential.credentialID,
+      credentialID: matchingCredential.credentialID,
+      // Buffer.from is more defensive than `new Uint8Array(...)` about
+      // what Mongoose actually hands back for a Buffer-typed field nested
+      // inside an array of subdocuments.
+      publicKey: Buffer.from(matchingCredential.publicKey),
+      credentialPublicKey: Buffer.from(matchingCredential.publicKey),
+      counter: matchingCredential.counter,
+      transports: matchingCredential.transports,
+    };
+
     let verification;
     try {
       verification = await verifyAuthenticationResponse({
@@ -75,15 +94,8 @@ const verifyAuthentication = async (req, res) => {
         expectedChallenge: challenge,
         expectedOrigin: expectedOrigins,
         expectedRPID: rpID,
-        credential: {
-          id: matchingCredential.credentialID,
-          // Buffer.from is more defensive than `new Uint8Array(...)` about
-          // what Mongoose actually hands back for a Buffer-typed field
-          // nested inside an array of subdocuments.
-          publicKey: Buffer.from(matchingCredential.publicKey),
-          counter: matchingCredential.counter,
-          transports: matchingCredential.transports,
-        },
+        credential: credentialForVerification,
+        authenticator: credentialForVerification,
       });
     } catch (verifyErr) {
       console.error("verifyAuthenticationResponse failed:", verifyErr);
