@@ -60,6 +60,14 @@ const verifyAuthentication = async (req, res) => {
       return res.status(400).json({ ok: false, message: "This passkey isn't recognized" });
     }
 
+ // DIAGNOSTIC: confirms exactly what got read back from storage.
+    // Safe to delete once login is confirmed working end to end.
+    console.log(
+      "[webauthn] stored credential — counter:", matchingCredential.counter,
+      "publicKey type:", matchingCredential.publicKey?.constructor?.name,
+      "publicKey length:", matchingCredential.publicKey?.length
+    );
+
     let verification;
     try {
       verification = await verifyAuthenticationResponse({
@@ -69,7 +77,10 @@ const verifyAuthentication = async (req, res) => {
         expectedRPID: rpID,
         credential: {
           id: matchingCredential.credentialID,
-          publicKey: new Uint8Array(matchingCredential.publicKey),
+          // Buffer.from is more defensive than `new Uint8Array(...)` about
+          // what Mongoose actually hands back for a Buffer-typed field
+          // nested inside an array of subdocuments.
+          publicKey: Buffer.from(matchingCredential.publicKey),
           counter: matchingCredential.counter,
           transports: matchingCredential.transports,
         },
