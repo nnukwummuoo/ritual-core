@@ -70,13 +70,17 @@ const updateApplicationDocument = async (req, res) => {
 
     await document.save();
 
-    return res.status(200).json({
+return res.status(200).json({
       ok: true,
       message: "Application updated successfully",
       document,
     });
   } catch (err) {
-    return res.status(500).json({ ok: false, message: `${err.message}!` });
+    console.error("[updateApplicationDocument] failed:", err);
+    return res.status(500).json({
+      ok: false,
+      message: err?.message ? `${err.message}` : "Something went wrong while saving. Check server logs for '[updateApplicationDocument] failed'.",
+    });
   }
 };
 

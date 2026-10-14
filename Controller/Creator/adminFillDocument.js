@@ -110,9 +110,13 @@ const adminFillDocument = async (req, res) => {
 
     await document.save();
 
-    return res.status(200).json({ ok: true, message: "Verification record saved", document });
+return res.status(200).json({ ok: true, message: "Verification record saved", document });
   } catch (err) {
-    return res.status(500).json({ ok: false, message: `${err.message}!` });
+    console.error("[adminFillDocument] failed:", err);
+    return res.status(500).json({
+      ok: false,
+      message: err?.message ? `${err.message}` : "Something went wrong while saving. Check server logs for '[adminFillDocument] failed'.",
+    });
   }
 };
 

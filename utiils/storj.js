@@ -86,12 +86,17 @@ async function getBucketForUpload(folder) {
   try {
     await s3Client.headBucket({ Bucket: primary }).promise();
     return primary;
-  } catch (err) {
+} catch (err) {
     if (isBucketNotFound(err)) {
       console.warn("[storj] Bucket not found:", primary, "- using fallback bucket:", STORJ_BUCKET_POST);
       return STORJ_BUCKET_POST;
     }
-    throw err;
+    // AWS SDK errors can surface with a null/empty .message for some
+    // low-level failures (network, credentials, etc.), which produces
+    // confusing "null!"-style messages for whoever catches this upstream.
+    // Log the full error here and guarantee callers always get a real string.
+    console.error("[storj] getBucketForUpload failed for bucket:", primary, err);
+    throw new Error(err?.message || err?.code || "Could not reach storage to verify the bucket");
   }
 }
 
