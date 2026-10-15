@@ -9,22 +9,27 @@ const getdocument = async (req, res) => {
       return res.status(404).json({ ok: false, message: "No documents found" });
     }
 
-    const enriched = await Promise.all(
-      docs.map(async (doc) => {
-        try {
-          const user = await userdb.findById(doc.userid).exec();
-          return {
-            ...doc.toObject(),
-            firstname: doc.firstname || user?.firstname || "",
-            lastname:  doc.lastname  || user?.lastname  || "",
-            username:  user?.username  || "",
-            photolink: user?.photolink || "",
-          };
-        } catch {
-          return doc.toObject();
-        }
-      })
-    );
+    // Fetch every referenced user in one query instead of one query per
+    // document (was an N+1 — slow and the main thing that could make this
+    // endpoint feel like it hangs as the documents collection grows).
+    const userIds = [...new Set(docs.map((d) => d.userid).filter(Boolean))];
+    const users = userIds.length > 0
+      ? await userdb.find({ _id: { $in: userIds } })
+          .select("firstname lastname username photolink")
+          .exec()
+      : [];
+    const usersById = new Map(users.map((u) => [u._id.toString(), u]));
+
+    const enriched = docs.map((doc) => {
+      const user = usersById.get(doc.userid?.toString());
+      return {
+        ...doc.toObject(),
+        firstname: doc.firstname || user?.firstname || "",
+        lastname:  doc.lastname  || user?.lastname  || "",
+        username:  user?.username  || "",
+        photolink: user?.photolink || "",
+      };
+    });
 
     return res.status(200).json({
       ok: true,
@@ -33,7 +38,8 @@ const getdocument = async (req, res) => {
     });
 
   } catch (err) {
-    return res.status(500).json({ ok: false, message: `${err.message}!` });
+    console.error("[getdocument] failed:", err);
+    return res.status(500).json({ ok: false, message: err?.message || "Could not load documents" });
   }
 };
 
