@@ -74,7 +74,7 @@ const readPost = async (req, res) => {
     return res.status(200).json({
       ok: true,
       message: `Posts for user ${userid}`,
-      post: posts
+      post: withStableMediaItems(posts, req)
     });
   } catch (err) {
     return res.status(500).json({ ok: false, message: `${err.message}!` });

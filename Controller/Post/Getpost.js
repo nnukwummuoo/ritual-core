@@ -10,6 +10,7 @@ const likedbs = require("../../Creators/like");
 const alldelete = require("../../utiils/Deletes/deleteAcceptsBook");
 const { filterBlockedComments } = require("../../utiils/blockFilter");
 const { filterBlockedPosts } = require("../../utiils/blockingUtils");
+const { withStableMediaItems } = require("../../utiils/postMediaUrls");
 
 const readPost = async (req, res) => {
   // let data = await connectdatabase()
@@ -231,7 +232,7 @@ const readPost = async (req, res) => {
       .json({
         ok: true,
         message: `Posts fetched successfully`,
-        post: postsWithFilteredComments,
+        post: withStableMediaItems(postsWithFilteredComments, req),
         pagination: {
           currentPage: page,
           totalPages,
