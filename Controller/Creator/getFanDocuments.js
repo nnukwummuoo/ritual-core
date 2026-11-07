@@ -1,6 +1,7 @@
 // Controller/Creator/getFanDocuments.js  (fan docs only)
 let documentdb = require("../../Creators/document");
 let userdb = require("../../Creators/userdb");
+const { withStablePhotoLinks } = require("../../utiils/verificationPhotoUrls");
 
 const getFanDocuments = async (req, res) => {
   try {
@@ -16,14 +17,14 @@ const getFanDocuments = async (req, res) => {
         try {
           const user = await userdb.findById(doc.userid).exec();
           return {
-            ...doc.toObject(),
+               ...withStablePhotoLinks(doc, req),
             firstname: doc.firstname || user?.firstname || "",
             lastname:  doc.lastname  || user?.lastname  || "",
             username:  user?.username || "",
             photolink: user?.photolink || "",
           };
         } catch {
-          return doc.toObject();
+           return withStablePhotoLinks(doc, req);
         }
       })
     );

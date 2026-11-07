@@ -1,5 +1,6 @@
 const documentdb = require("../../Creators/document");
 const { updateSingleFileToCloudinary } = require("../../utiils/storj");
+const { withStablePhotoLinks } = require("../../utiils/verificationPhotoUrls");
 
 // PUT /getdocument/:docid
 // Admin-only: edit a creator or fan verification application's fields,
@@ -72,8 +73,8 @@ const updateApplicationDocument = async (req, res) => {
 
 return res.status(200).json({
       ok: true,
-      message: "Application updated successfully",
-      document,
+  message: "Application updated successfully",
+      document: withStablePhotoLinks(document, req),
     });
   } catch (err) {
     console.error("[updateApplicationDocument] failed:", err);

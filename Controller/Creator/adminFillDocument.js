@@ -1,6 +1,7 @@
 const documentdb = require("../../Creators/document");
 const userdb = require("../../Creators/userdb");
 const { uploadManyFilesToCloudinary, updateSingleFileToCloudinary } = require("../../utiils/storj");
+const { withStablePhotoLinks } = require("../../utiils/verificationPhotoUrls");
 
 // PUT /getdocument/admin/:userid
 // Admin-only: create or fill in a verification document for a user who was
@@ -110,7 +111,7 @@ const adminFillDocument = async (req, res) => {
 
     await document.save();
 
-return res.status(200).json({ ok: true, message: "Verification record saved", document });
+return res.status(200).json({ ok: true, message: "Verification record saved", document: withStablePhotoLinks(document, req) });
   } catch (err) {
     console.error("[adminFillDocument] failed:", err);
     return res.status(500).json({

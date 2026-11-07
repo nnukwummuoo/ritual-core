@@ -1,5 +1,6 @@
 let documentdb = require("../../Creators/document");
 let userdb = require("../../Creators/userdb");
+const { withStablePhotoLinks } = require("../../utiils/verificationPhotoUrls");
 
 const getFanDocumentByUserId = async (req, res) => {
   try {
@@ -16,7 +17,7 @@ const getFanDocumentByUserId = async (req, res) => {
 
     const user = await userdb.findById(doc.userid).exec();
     const enriched = {
-      ...doc.toObject(),
+         ...withStablePhotoLinks(doc, req),
       firstname: doc.firstname || user?.firstname || "",
       lastname: doc.lastname || user?.lastname || "",
       username: user?.username || "",
