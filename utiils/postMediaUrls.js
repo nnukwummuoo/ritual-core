@@ -10,20 +10,33 @@ const proxyFor = (req, item) => {
     : `${base}/api/image/view?publicId=${id}`;
 };
 
-const fixItems = (items, req) =>
-  Array.isArray(items)
-    ? items.map((m) => (m && m.publicId ? { ...m, url: proxyFor(req, m) } : m))
-    : items;
-
-// Accepts one post or an array of posts (plain objects or mongoose docs).
-const withStableMediaItems = (postOrPosts, req) => {
-  const fixOne = (p) => {
+const fixOne = (p, req) => {
+  try {
     if (!p) return p;
     const obj = typeof p.toObject === "function" ? p.toObject() : p;
     if (!Array.isArray(obj.mediaItems) || obj.mediaItems.length === 0) return obj;
-    return { ...obj, mediaItems: fixItems(obj.mediaItems, req) };
-  };
-  return Array.isArray(postOrPosts) ? postOrPosts.map(fixOne) : fixOne(postOrPosts);
+    return {
+      ...obj,
+      mediaItems: obj.mediaItems.map((m) =>
+        m && m.publicId ? { ...m, url: proxyFor(req, m) } : m
+      ),
+    };
+  } catch (err) {
+    console.error("[withStableMediaItems] skipped one post:", err?.message || err);
+    return p;
+  }
+};
+
+// Accepts one post or an array of posts (plain objects or mongoose docs).
+const withStableMediaItems = (postOrPosts, req) => {
+  try {
+    return Array.isArray(postOrPosts)
+      ? postOrPosts.map((p) => fixOne(p, req))
+      : fixOne(postOrPosts, req);
+  } catch (err) {
+    console.error("[withStableMediaItems] failed:", err?.message || err);
+    return postOrPosts;
+  }
 };
 
 module.exports = { withStableMediaItems };
