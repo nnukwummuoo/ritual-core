@@ -29,7 +29,7 @@ async function generateReferralCode() {
  * @param {number} rewardAmount - Amount to reward (default: 100 coins)
  * @returns {Promise<void>}
  */
-async function rewardReferrer(referrerId, rewardAmount = 1.7) {
+async function rewardReferrer(referrerId, rewardAmount = 2) {
     try {
         const referrer = await userdb.findById(referrerId);
         if (!referrer) {
@@ -56,7 +56,6 @@ module.exports = {
     rewardReferrer,
     checkHybridDeviceMatch,
     extractDeviceComponents,
-    grantSignUpBonus
 };
 
 /**

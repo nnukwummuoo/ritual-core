@@ -2,70 +2,45 @@ const userdb = require("../../Creators/userdb");
 const referraldb = require("../../Creators/referraldb");
 const { generateReferralCode } = require("../../helpers/referralHelpers");
 
-const { calculateReferralProgress } = require("../../utiils/referralProgressHelper");
-
-/**
- * Get referral information for a user
- * Returns the user's referral code, count, and list of referrals
- */
+// Returns the user's referral code, balance, count and the list of friends they referred.
 const getReferralInfo = async (req, res) => {
     try {
-        const userId = req.userId; // From auth middleware
-
+        const userId = req.userId;
         if (!userId) {
-            return res.status(401).json({
-                ok: false,
-                message: "Unauthorized",
-            });
+            return res.status(401).json({ ok: false, message: "Unauthorized" });
         }
 
-        // Get user data
-        let user = await userdb.findById(userId).select('referralCode referralCount username rewardBalance');
-
+        const user = await userdb.findById(userId).select("referralCode referralCount rewardBalance");
         if (!user) {
-            return res.status(404).json({
-                ok: false,
-                message: "User not found",
-            });
+            return res.status(404).json({ ok: false, message: "User not found" });
         }
 
-        // 🎁 Generate referral code if user doesn't have one (for existing users)
+        // Existing users get a code the first time they open the page
         if (!user.referralCode) {
-            console.log(`🔧 Generating referral code for existing user: ${userId}`);
-            const newReferralCode = await generateReferralCode();
-            user.referralCode = newReferralCode;
+            user.referralCode = await generateReferralCode();
             await user.save();
-            console.log(`✅ Generated referral code ${newReferralCode} for user ${userId}`);
         }
 
-        // Get referral details
         const referrals = await referraldb
             .find({ referrerId: userId })
             .sort({ createdAt: -1 })
-            .limit(50);
+            .limit(50)
+            .lean();
 
-        // Get referee details and calculate progress
-        const referralDetails = await Promise.all(
-            referrals.map(async (ref) => {
-                const referee = await userdb.findById(ref.refereeId).select('username createdAt');
+        const referees = await userdb
+            .find({ _id: { $in: referrals.map((r) => r.refereeId) } })
+            .select("username createdAt")
+            .lean();
+        const refereeMap = new Map(referees.map((u) => [String(u._id), u]));
 
-                // Calculate progress automatically
-                const progress = await calculateReferralProgress(ref);
-
-                return {
-                    id: ref._id,
-                    username: referee?.username || 'Unknown',
-                    joinedAt: referee?.createdAt || ref.createdAt,
-                    status: ref.status,
-                    rewardAmount: ref.rewardAmount,
-                    rewardType: ref.rewardType,
-                    milestoneCompleted: ref.milestoneCompleted,
-                    milestoneFailed: ref.milestoneFailed,
-                    milestoneReward: ref.milestoneReward,
-                    progress: progress // Include the detailed progress data
-                };
-            })
-        );
+        const referralDetails = referrals.map((ref) => {
+            const referee = refereeMap.get(String(ref.refereeId));
+            return {
+                id: ref._id,
+                username: referee?.username || "Unknown",
+                joinedAt: referee?.createdAt || ref.createdAt,
+            };
+        });
 
         return res.status(200).json({
             ok: true,

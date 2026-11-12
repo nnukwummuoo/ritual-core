@@ -21,7 +21,7 @@ const getAdminReferralAnalytics = async (req, res) => {
         const usersWithoutReferral = totalUsers - actualReferrals;
 
         // Calculate total gold spent on LEGITIMATE referrals only (1.7 gold per actual referral)
-        const totalGoldSpent = actualReferrals * 1.7;
+        const totalGoldSpent = actualReferrals * 50;
 
         // Get top referrers based on ACTUAL successful referrals
         // Count only completed/paid referrals from referraldb
@@ -61,7 +61,7 @@ const getAdminReferralAnalytics = async (req, res) => {
                     photolink: user.photolink,
                     referralCount: item.actualReferralCount, // Actual legitimate referrals only
                     rewardBalance: user.rewardBalance || 0,
-                    totalEarned: item.actualReferralCount * 1.7, // Calculate based on actual referrals
+                    totalEarned: item.actualReferralCount * 50, // gold
                 };
             })
         );

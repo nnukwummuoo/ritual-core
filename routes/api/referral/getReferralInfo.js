@@ -6,6 +6,5 @@ const verifyJWT = require("../../../Middleware/verify");
 
 router.get("/", verifyJWT, getReferralInfo);
 router.post("/transfer", verifyJWT, transferReferralReward);
-router.post("/check-progress", verifyJWT, require("../../../Controller/Referral/checkReferralProgress"));
 
 module.exports = router;

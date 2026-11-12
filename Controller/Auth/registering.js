@@ -227,12 +227,12 @@ const handleNewUser = async (req, res) => {
             referrerId: referrerId,
             refereeId: user._id.toString(),
             status: 'completed',
-            rewardAmount: 1.7,
+            rewardAmount: 50, // gold ($2)
             rewardType: 'gold',
           });
 
           // Reward the referrer
-          await rewardReferrer(referrerId, 1.7);
+          await rewardReferrer(referrerId, 2); // $2 = 50 gold
 
           console.log(`✅ Referral bonus awarded to user ${referrerId}`);
         } catch (refError) {
