@@ -87,7 +87,7 @@ const readProfile = async (req, res) => {
       coinBalance: du.coinBalance || 0,
       // PPV settings
       ppvStatus: du.ppvStatus || "none",
-      ppvPrice: du.ppvPrice || 0,
+      ppvPrice: du.ppvPrice || 100,
       ppvEnabled: du.ppvEnabled || false,
     };
 

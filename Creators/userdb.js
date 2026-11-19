@@ -261,7 +261,7 @@ fan_application_status: {
     },
     ppvPrice: {
       type: Number,
-      default: 0,
+      default: 100,
     },
  ppvEnabled: {
       type: Boolean,

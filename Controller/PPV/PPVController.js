@@ -9,151 +9,11 @@ const sendEmail = require("../../utiils/sendEmailnot");
 const admindb = require("../../Creators/admindb");
 const balancehistorydb = require("../../Creators/mainbalance");
 
-// 1. User Requests PPV Feature
-const requestPPV = async (req, res) => {
-    const { userid } = req.body;
-
-    if (!userid) {
-        return res.status(400).json({ ok: false, message: "User ID is required" });
-    }
-
-    try {
-        const user = await userdb.findById(userid);
-        if (!user) {
-            return res.status(404).json({ ok: false, message: "User not found" });
-        }
-
-        if (user.ppvStatus === "approved") {
-            return res.status(400).json({ ok: false, message: "Already approved" });
-        }
-
-        if (user.ppvStatus === "pending") {
-            return res.status(400).json({ ok: false, message: "Request already pending" });
-        }
-
-        user.ppvStatus = "pending";
-        await user.save();
-
-        // Notify Admins
-        // const admins = await userdb.find({ admin: true });
-        // for (const admin of admins) {
-        //   await pushAdminNotification(admin._id, `New Pay Per View Request from ${user.username || user.firstname}`);
-        // }
-
-        return res.status(200).json({ ok: true, message: "Request submitted successfully" });
-    } catch (error) {
-        console.error("Error asking for PPV:", error);
-        return res.status(500).json({ ok: false, message: "Internal server error" });
-    }
-};
-
-// 2. Admin Gets Pending Requests
-const getPPVRequests = async (req, res) => {
-    try {
-        const pendingUsers = await userdb.find({ ppvStatus: "pending" });
-
-        const enrichedRequests = await Promise.all(pendingUsers.map(async (user) => {
-            const followersCount = await followdb.countDocuments({ userid: user._id });
-            const followingCount = await followdb.countDocuments({ followerid: user._id });
-
-            // Fetch likes count: find all posts by user, then count likes for those posts
-            const userPosts = await postdb.find({ userid: user._id }, '_id');
-            const postIds = userPosts.map(p => p._id);
-            const likesCount = await likedb.countDocuments({ postid: { $in: postIds } });
-
-            let photolink = user.photolink;
-            if (!photolink) {
-                const completeProfile = await completedb.findOne({ useraccountId: user._id });
-                photolink = completeProfile ? completeProfile.photoLink : "";
-            }
-
-            return {
-                _id: user._id,
-                firstname: user.firstname,
-                lastname: user.lastname,
-                username: user.username,
-                photolink: photolink,
-                followersCount,
-                followingCount,
-                likesCount,
-                hasPortfolio: !!user.creator_portfolio_id,
-                status: user.ppvStatus
-            };
-        }));
-
-        return res.status(200).json({ ok: true, requests: enrichedRequests });
-
-    } catch (error) {
-        console.error("Error getting PPV requests:", error);
-        return res.status(500).json({ ok: false, message: "Internal server error" });
-    }
-};
-
-// 3. Admin Approves/Declines Request
-const actionPPVRequest = async (req, res) => {
-    const { userid, action } = req.body; // action: "approve" | "decline"
-
-    if (!userid || !action) {
-        return res.status(400).json({ ok: false, message: "User ID and action required" });
-    }
-
-    try {
-        const user = await userdb.findById(userid);
-        if (!user) {
-            return res.status(404).json({ ok: false, message: "User not found" });
-        }
-
-        if (action === "approve") {
-            user.ppvStatus = "approved";
-            user.ppvEnabled = true;
-            user.creator_verified = true; // Auto verify creator if approved for PPV? Maybe not.
-            await user.save();
-
-            const message = "Your Pay Per View request has been APPROVED! Go to settings to set your price.";
-
-            // 1. Database Notification
-            await admindb.create({
-                userid: userid,
-                message: message,
-                title: "PPV Approved",
-                seen: false
-            });
-
-            // 2. Push Notification
-            await pushMessageNotification(userid, message, "System");
-
-        } else if (action === "decline") {
-            user.ppvStatus = "declined";
-            user.ppvEnabled = false;
-            await user.save();
-
-            const message = "Your Pay Per View request was declined.";
-
-            // 1. Database Notification
-            await admindb.create({
-                userid: userid,
-                message: message,
-                title: "PPV Declined",
-                seen: false
-            });
-
-            // 2. Push Notification
-            await pushMessageNotification(userid, message, "System");
-        } else {
-            return res.status(400).json({ ok: false, message: "Invalid action" });
-        }
-
-        return res.status(200).json({ ok: true, message: `Request ${action}d successfully` });
-
-    } catch (error) {
-        console.error("Error processing PPV action:", error);
-        return res.status(500).json({ ok: false, message: "Internal server error" });
-    }
-};
 
 // 4. User Updates PPV Settings (Price/Toggle)
 const updatePPVSettings = async (req, res) => {
-    const { userid, price, enabled } = req.body;
+    const { price, enabled } = req.body;
+    const userid = req.userId; // from the verified token, never from the request body
 
     if (!userid) {
         return res.status(400).json({ ok: false, message: "User ID required" });
@@ -165,11 +25,16 @@ const updatePPVSettings = async (req, res) => {
             return res.status(404).json({ ok: false, message: "User not found" });
         }
 
-        if (user.ppvStatus !== "approved") {
-            return res.status(403).json({ ok: false, message: "Feature not approved for this user" });
+        if (!user.creator_verified) {
+            return res.status(403).json({ ok: false, message: "PPV is available to verified creators only" });
         }
 
-        if (price !== undefined) user.ppvPrice = Number(price);
+        if (price !== undefined) {
+            if (!Number.isFinite(Number(price)) || Number(price) < 1) {
+                return res.status(400).json({ ok: false, message: "Minimum price is 1 Gold" });
+            }
+            user.ppvPrice = Number(price);
+        }
         if (enabled !== undefined) user.ppvEnabled = Boolean(enabled);
 
         await user.save();
@@ -184,7 +49,8 @@ const updatePPVSettings = async (req, res) => {
 
 // 5. Unlock Message
 const unlockMessage = async (req, res) => {
-    const { userid, messageid } = req.body; // userid is the one PAYING (viewer)
+    const { messageid } = req.body;
+    const userid = req.userId; // the one PAYING (viewer), from the verified token
 
     if (!userid || !messageid) {
         return res.status(400).json({ ok: false, message: "Missing required fields" });
@@ -282,9 +148,6 @@ const unlockMessage = async (req, res) => {
 }
 
 module.exports = {
-    requestPPV,
-    getPPVRequests,
-    actionPPVRequest,
     updatePPVSettings,
     unlockMessage
 };
