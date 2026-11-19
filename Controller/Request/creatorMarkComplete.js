@@ -1,12 +1,13 @@
 const requestdb = require("../../Creators/requsts");
 const creatordb = require("../../Creators/creators");
 const admindb = require("../../Creators/admindb");
+const userdb = require("../../Creators/userdb");
 const sendEmail = require("../../utiils/sendEmailnot");
 const { pushAdminNotification } = require("../../utiils/sendPushnot");
 
 const TITLE = "Booking marked as complete";
-const MESSAGE =
-  "The creator has marked this booking as complete.\n" +
+const buildMessage = (creatorName) =>
+  `${creatorName} has marked this booking as complete.\n` +
   "Please mark it as complete on your side too — whether the meet went well or not.\n" +
   "This releases the payment. You can do it from the request card.";
 
@@ -59,7 +60,17 @@ const creatorMarkComplete = async (req, res) => {
       return res.status(200).json({ ok: true, alreadyMarked: true });
     }
 
-    const fanId = request.userid;
+   const fanId = request.userid;
+
+    // Use the creator's username in the message ("Jane has marked…")
+    let creatorName = "The creator";
+    try {
+      const creatorUser = await userdb.findById(creatorUserId).select("firstname").lean();
+      if (creatorUser?.firstname) creatorName = creatorUser.firstname;
+    } catch (e) {
+      console.error("[creatorMarkComplete] could not load creator name:", e.message);
+    }
+    const MESSAGE = buildMessage(creatorName);
 
     try {
       await admindb.create({ userid: fanId, title: TITLE, message: MESSAGE, seen: false });
@@ -70,7 +81,7 @@ const creatorMarkComplete = async (req, res) => {
       await pushAdminNotification(fanId, MESSAGE, "activity", {
         title: TITLE,
         type: "activity",
-        url: "/notifications",
+        url: "/notifications/activity",
       });
     } catch (e) {
       console.error("[creatorMarkComplete] push failed:", e.message);
