@@ -64,6 +64,14 @@ bookingRef: {
   unique: true,
   sparse: true, // lets existing/older bookings without one coexist
 },
+creatorMarkedComplete: {
+  type: Boolean,
+  default: false,
+},
+creatorMarkedCompleteAt: {
+  type: Date,
+  required: false,
+},
   },
   { timestamps: true }
 );

@@ -7,6 +7,8 @@ const acceptFanRequest = require("../../Controller/Request/acceptFanRequest");
 const declineFanRequest = require("../../Controller/Request/declineFanRequest");
 const cancelFanRequest = require("../../Controller/Request/cancelFanRequests");
 const completeFanRequest = require("../../Controller/Request/completeFanRequests");
+const creatorMarkComplete = require("../../Controller/Request/creatorMarkComplete");
+const verifyJWT = require("../../Middleware/verify");
 const { controller: processExpiredRequests } = require("../../Controller/Request/processExpiredRequests");
 const getFanRequests = require("../../Controller/Request/getFanRequests");
 const sendEmail = require("../../utiils/sendEmailnot");
@@ -28,6 +30,9 @@ router.post("/cancel", cancelFanRequest);
 
 // Complete fan meet
 router.post("/complete", completeFanRequest);
+
+// Creator marks the meet/date as done → fan is notified to release payment
+router.post("/creator-mark-complete", verifyJWT, creatorMarkComplete);
 
 // Get fan meet requests for notifications
 router.get("/requests", getFanRequests);
