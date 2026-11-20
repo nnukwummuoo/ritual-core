@@ -1331,6 +1331,9 @@ mongoose.connection.once("open", () => {
   const scheduledExpiredRequests = require('./scripts/scheduledExpiredRequests');
   scheduledExpiredRequests.start();
 
+    // Session start/end notifications — every minute
+  require('./scripts/sessionNotificationJob').start();
+
   // Start RitualExpiry management cron jobs
   const { scheduleRitualExpiry } = require('./jobs/ritualExpiryScheduler');
   scheduleRitualExpiry();

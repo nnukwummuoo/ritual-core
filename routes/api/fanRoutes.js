@@ -8,6 +8,7 @@ const declineFanRequest = require("../../Controller/Request/declineFanRequest");
 const cancelFanRequest = require("../../Controller/Request/cancelFanRequests");
 const completeFanRequest = require("../../Controller/Request/completeFanRequests");
 const creatorMarkComplete = require("../../Controller/Request/creatorMarkComplete");
+const { notifySessionStarted } = require("../../utiils/sessionNotifications");
 const verifyJWT = require("../../Middleware/verify");
 const { controller: processExpiredRequests } = require("../../Controller/Request/processExpiredRequests");
 const getFanRequests = require("../../Controller/Request/getFanRequests");
@@ -48,12 +49,21 @@ router.post("/notify-session", async (req, res) => {
   }
 
   try {
-    const sessionEndAt = new Date(Date.now() + 30 * 60 * 1000);
+    // Fan date = 1 hour, everything else (Fan meet) = 30 minutes
+    const existing = await requestdb.findById(requestId).select("type").lean();
+    const sessionMinutes = (existing?.type || "").toLowerCase() === "fan date" ? 60 : 30;
+    const sessionEndAt = new Date(Date.now() + sessionMinutes * 60 * 1000);
     await requestdb.findByIdAndUpdate(requestId, { 
       sessionEndAt,
       startNotified: false,
       sessionNotified: false 
     });
+
+    // Tell both sides right now — no waiting for a job
+    notifySessionStarted(requestId).catch((e) =>
+      console.error("[notify-session] start notification failed:", e.message)
+    );
+
     return res.status(200).json({ ok: true });
   } catch (err) {
     return res.status(500).json({ ok: false, message: err.message });

@@ -4,7 +4,7 @@ const creatordb = require("../../Creators/creators");
 const historydb = require("../../Creators/mainbalance");
 const admindb = require("../../Creators/admindb");
 let sendEmail = require("../../utiils/sendEmailnot");
-let { pushActivityNotification } = require("../../utiils/sendPushnot");
+let { pushActivityNotification, pushAdminNotification } = require("../../utiils/sendPushnot");
 
 const refundUser = async (request, hostType) => {
   const user = await userdb.findOne({ _id: request.userid }).exec();
@@ -91,81 +91,13 @@ const backfillMissedRefunds = async () => {
 };
 
  
-const processEndedSessions = async () => {
-  const now = new Date();
-
-  const startedSessions = await requestdb.find({
-    status: "accepted",
-    sessionEndAt: { $exists: true },
-    startNotified: { $ne: true }
-  }).exec();
-
-  console.log("Processing " + startedSessions.length + " started sessions");
-
-  for (const request of startedSessions) {
-    try {
-      const hostType = request.type || "Fan meet";
-      const creatorRecord = await creatordb.findOne({ _id: request.creator_portfolio_id }).exec();
-
-      const fanMessage = "🎉 Your " + hostType + " has started!";
-      const creatorMessage = "🎉Your " + hostType + " has started!";
-
-      try { await pushActivityNotification(request.userid, fanMessage, "session_update"); } catch(e) { console.error("push fan failed: " + e.message); }
-      try { await admindb.create({ userid: request.userid, message: fanMessage, seen: false }); } catch(e) { console.error("admindb fan failed: " + e.message); }
-
-      if (creatorRecord?.userid) {
-        try { await pushActivityNotification(creatorRecord.userid, creatorMessage, "session_update"); } catch(e) { console.error("push creator failed: " + e.message); }
-        try { await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false }); } catch(e) { console.error("admindb creator failed: " + e.message); }
-      }
-
-      request.startNotified = true;
-      await request.save();
-
-    } catch (err) {
-      console.error("Error processing started session " + request._id + ": " + err.message);
-    }
-  }
-
-  const endedSessions = await requestdb.find({
-    status: "accepted",
-    sessionEndAt: { $lt: now },
-    sessionNotified: { $ne: true }
-  }).exec();
-
-  console.log("Processing " + endedSessions.length + " ended sessions");
-
-  for (const request of endedSessions) {
-    try {
-      const hostType = request.type || "Fan meet";
-      const creatorRecord = await creatordb.findOne({ _id: request.creator_portfolio_id }).exec();
-
-      const fanMessage = "✅ Your " + hostType + " has ended! Please mark it as complete in your request card so your creator can receive payment.";
-      const creatorMessage = "✅ Your " + hostType + " has ended. Your fan will be notified to mark it as complete — once they do, your payment is released instantly. If they don't, contact Mmeko Support and we will release your payment immediately.";
-
-      try { await pushActivityNotification(request.userid, fanMessage, "session_update"); } catch(e) { console.error("push fan failed: " + e.message); }
-      try { await admindb.create({ userid: request.userid, message: fanMessage, seen: false }); } catch(e) { console.error("admindb fan failed: " + e.message); }
-
-      if (creatorRecord?.userid) {
-        try { await pushActivityNotification(creatorRecord.userid, creatorMessage, "session_update"); } catch(e) { console.error("push creator failed: " + e.message); }
-        try { await admindb.create({ userid: creatorRecord.userid, message: creatorMessage, seen: false }); } catch(e) { console.error("admindb creator failed: " + e.message); }
-      }
-
-      request.sessionNotified = true;
-      await request.save();
-
-    } catch (err) {
-      console.error("Error processing ended session " + request._id + ": " + err.message);
-    }
-  }
-};
-
 // Core logic — no req/res, used by cron
 const processExpiredRequestsCore = async () => {
   const now = new Date();
 
    // Backfill missed refunds from threshold change (Fan call excluded — no refund applies)
     await backfillMissedRefunds();
-    await processEndedSessions();
+
 
     // Fan call: expire after 10 days from acceptance, no refund
 const expiredFanCallRequests = await requestdb.find({
